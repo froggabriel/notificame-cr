@@ -113,6 +113,7 @@ function App() {
     const [selectedProductJson, setSelectedProductJson] = useState(null);
     const [isJsonDialogOpen, setIsJsonDialogOpen] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
+    const [initialSelectionMade, setInitialSelectionMade] = useState(false);
 
     const PROXY_URL = 'http://localhost:3001';
     const RECOMMENDATIONS_PER_PAGE = 3;
@@ -262,6 +263,12 @@ function App() {
         const newProductId = event.target.value;
         setSelectedProduct(newProductId);
     };
+
+    useEffect(() => {
+        if (products.length > 0 && !selectedProduct) {
+            setSelectedProduct(products[0].productId);
+        }
+    }, [products]);    
 
     useEffect(() => {
         if (selectedProduct) {
