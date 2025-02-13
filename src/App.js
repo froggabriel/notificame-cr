@@ -34,8 +34,9 @@ import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CodeIcon from '@mui/icons-material/Code';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { styled } from '@mui/material/styles';
-import { JsonViewer } from '@textea/json-viewer';  // Import @textea/json-viewer
+import { JsonViewer } from '@textea/json-viewer';
 
 const StyledMenuItem = styled(MenuItem)(({ theme, available }) => ({
     ...(available === 'false' && {
@@ -70,9 +71,6 @@ const RecommendationCard = styled(Card)(({ theme, available }) => ({
 }));
 
 const JsonButton = styled(Button)(({ theme }) => ({
-    position: 'absolute',
-    top: theme.spacing(1),
-    right: theme.spacing(1),
     backgroundColor: alpha(theme.palette.primary.main, 0.7),
     color: theme.palette.common.white,
     padding: theme.spacing(0.5, 1),
@@ -80,9 +78,23 @@ const JsonButton = styled(Button)(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
     fontSize: '0.75rem',
     fontWeight: theme.typography.fontWeightMedium,
+    width: '100%', // Full width of the container
+    boxSizing: 'border-box', // Include padding and border in the element's total width and height
     '&:hover': {
         backgroundColor: theme.palette.primary.main,
     },
+}));
+
+const ButtonContainer = styled(Box)(({ theme }) => ({
+    position: 'absolute',
+    top: theme.spacing(1),
+    right: theme.spacing(1),
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(1), // Spacing between buttons
+    // alignItems: 'flex-end', // Remove alignItems
+    width: 'max-content', // Width based on content
+    maxWidth: '200px', // Prevent content from becoming too wide
 }));
 
 function App() {
@@ -200,9 +212,9 @@ function App() {
                 });
 
                 setProducts(sortedProducts);
-
+                 // After sorting, set selected product.
                 if (sortedProducts.length > 0) {
-                    setSelectedProduct(sortedProducts[0].productId);
+                   // setSelectedProduct(sortedProducts[0].productId); // Select the first product. Removed, this has to be done on add product only
                 }
             })
             .catch(error => {
@@ -237,9 +249,12 @@ function App() {
                 };
                 console.warn(`Store detail not found for store ID: ${storeId}`);
             }
+            setAvailability(storeAvailability);
+            if (detail && detail.hasInvontory === 1) {
+                productAvailableAnywhereVar = true;
+            }
         });
 
-        setAvailability(storeAvailability);
         setIsProductAvailable(productAvailableAnywhereVar);
     };
 
@@ -271,6 +286,8 @@ function App() {
 
     const handleAddProduct = () => {
         let productIdToAdd = newProductId;
+
+        // Check if the input is a URL
         if (newProductId.startsWith('https://')) {
             const parsedId = parseProductIdFromUrl(newProductId);
             if (parsedId) {
@@ -282,9 +299,18 @@ function App() {
         }
 
         if (productIdToAdd && !productIds.includes(productIdToAdd)) {
-            setProductIds([...productIds, productIdToAdd]);
-            setNewProductId('');
+            // Update productIds state and then set selected product
+            setProductIds(prevProductIds => {
+                const updatedProductIds = [...prevProductIds, productIdToAdd];
+                setSelectedProduct(productIdToAdd); // Select the new product
+                fetchAllProductsAvailability(updatedProductIds); // Refetch all products to include the new one
+                return updatedProductIds;
+
+            });
+             // setSelectedProduct(productIdToAdd); // set selectedProduct to the new product id.
+             // fetchAllProductsAvailability([...productIds, productIdToAdd]); // fetch all products again with the new id
         }
+        setNewProductId('');
     };
 
     const sortStoresByAvailability = () => {
@@ -334,9 +360,9 @@ function App() {
                                 break;
                             }
                         }
+                        return { ...product, availableAnywhere };
                     }
-                    return { ...product, availableAnywhere };
-                });
+                    });
 
                 setRecommendedProducts(filteredRecommendations);
                 setRecommendationStartIndex(0);
@@ -383,6 +409,13 @@ function App() {
         } catch (err) {
             console.error('Failed to copy: ', err);
             setError('Failed to copy JSON to clipboard.');
+        }
+    };
+
+    const goToProductSite = () => {
+        if (selectedProduct) {
+            const productURL = `https://automercado.cr/p/bebida-gaseosa-zero-sabor-cereza-dr.pepper-lata-355-ml/id/${selectedProduct}`;
+            window.open(productURL, '_blank'); // Opens in a new tab
         }
     };
 
@@ -457,14 +490,24 @@ function App() {
                             alt={productName}
                             sx={{ objectFit: 'contain', p: 2 }}
                         />
-                        <JsonButton
-                            variant="contained"
-                            size="small"
-                            onClick={handleOpenJsonDialog}
-                            startIcon={<CodeIcon />}
-                        >
-                            JSON
-                        </JsonButton>
+                        <ButtonContainer>
+                            <JsonButton
+                                variant="contained"
+                                size="small"
+                                onClick={goToProductSite}
+                                startIcon={<OpenInNewIcon />}
+                            >
+                                Go to Site
+                            </JsonButton>
+                            <JsonButton
+                                variant="contained"
+                                size="small"
+                                onClick={handleOpenJsonDialog}
+                                startIcon={<CodeIcon />}
+                            >
+                                JSON
+                            </JsonButton>
+                        </ButtonContainer>
                         <CardContent>
                             <Typography variant="h6" component="div">
                                 {productName}
