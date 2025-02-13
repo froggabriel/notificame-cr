@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import {
     Container,
@@ -35,8 +35,12 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CodeIcon from '@mui/icons-material/Code';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { styled } from '@mui/material/styles';
 import { JsonViewer } from '@textea/json-viewer';
+
+import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
 
 const StyledMenuItem = styled(MenuItem)(({ theme, available }) => ({
     ...(available === 'false' && {
@@ -98,6 +102,7 @@ const ButtonContainer = styled(Box)(({ theme }) => ({
 }));
 
 function App() {
+    const { themeMode, toggleTheme } = useContext(ThemeContext);
     const [stores, setStores] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState('');
     const [productName, setProductName] = useState('');
@@ -433,10 +438,14 @@ function App() {
     return (
         <Container maxWidth="md">
             <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Typography variant="h4" component="h1" gutterBottom>
-                    Grocery Store Availability
-                </Typography>
-
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                    <Typography variant="h4" component="h1" gutterBottom>
+                        Auto Mercado Availability
+                    </Typography>
+                    <IconButton onClick={toggleTheme} color="inherit">
+                        {themeMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                    </IconButton>
+                </Box>
                 {error && (
                     <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
                         {error}
@@ -624,4 +633,10 @@ function App() {
     );
 }
 
-export default App;
+export default function WrappedApp() {
+    return (
+        <ThemeProviderWrapper>
+            <App />
+        </ThemeProviderWrapper>
+    );
+}
