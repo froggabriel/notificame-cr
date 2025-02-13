@@ -3,103 +3,29 @@ import axios from 'axios';
 import {
     Container,
     Typography,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    Card,
-    CardMedia,
-    CardContent,
-    Grid,
     CircularProgress,
     Alert,
     Box,
-    ListItemAvatar,
-    Avatar,
-    ListItemText,
     TextField,
     Button,
-    alpha,
+    Card,
+    CardMedia,
+    CardContent,
     Divider,
     IconButton,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Tooltip
 } from '@mui/material';
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CodeIcon from '@mui/icons-material/Code';
-import FileCopyIcon from '@mui/icons-material/FileCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
-import { styled } from '@mui/material/styles';
-import { JsonViewer } from '@textea/json-viewer';
 
 import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
-
-const StyledMenuItem = styled(MenuItem)(({ theme, available }) => ({
-    ...(available === 'false' && {
-        color: theme.palette.text.disabled,
-        '& .MuiAvatar-root': {
-            filter: 'grayscale(100%)',
-        },
-    }),
-}));
-
-const ElegantButton = styled(Button)(({ theme }) => ({
-    color: theme.palette.text.secondary,
-    borderColor: alpha(theme.palette.text.secondary, 0.5),
-    "&:hover": {
-        backgroundColor: alpha(theme.palette.primary.main, 0.05),
-        borderColor: theme.palette.primary.main,
-        color: theme.palette.primary.main,
-    },
-}));
-
-const RecommendationCard = styled(Card)(({ theme, available }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    ...(available === 'false' && {
-        backgroundColor: alpha(theme.palette.background.default, 0.5),
-        color: theme.palette.text.disabled,
-        '& .MuiCardMedia-root': {
-            filter: 'grayscale(100%)',
-        },
-    }),
-}));
-
-const JsonButton = styled(Button)(({ theme }) => ({
-    backgroundColor: alpha(theme.palette.primary.main, 0.7),
-    color: theme.palette.common.white,
-    padding: theme.spacing(0.5, 1),
-    minWidth: 0,
-    borderRadius: theme.shape.borderRadius,
-    fontSize: '0.75rem',
-    fontWeight: theme.typography.fontWeightMedium,
-    width: '100%', // Full width of the container
-    boxSizing: 'border-box', // Include padding and border in the element's total width and height
-    '&:hover': {
-        backgroundColor: theme.palette.primary.main,
-    },
-}));
-
-const ButtonContainer = styled(Box)(({ theme }) => ({
-    position: 'absolute',
-    top: theme.spacing(1),
-    right: theme.spacing(1),
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(1), // Spacing between buttons
-    // alignItems: 'flex-end', // Remove alignItems
-    width: 'max-content', // Width based on content
-    maxWidth: '200px', // Prevent content from becoming too wide
-}));
+import { JsonButton, ButtonContainer } from './components/StyledComponents';
+import ProductDialog from './components/ProductDialog';
+import ProductList from './components/ProductList';
+import StoreList from './components/StoreList';
+import RecommendedProducts from './components/RecommendedProducts';
+import StoreDetailsDialog from './components/StoreDetailsDialog';
 
 function App() {
     const { themeMode, toggleTheme } = useContext(ThemeContext);
@@ -117,8 +43,8 @@ function App() {
     const [recommendationStartIndex, setRecommendationStartIndex] = useState(0);
     const [selectedProductJson, setSelectedProductJson] = useState(null);
     const [isJsonDialogOpen, setIsJsonDialogOpen] = useState(false);
+    const [isStoreDetailsDialogOpen, setIsStoreDetailsDialogOpen] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
-    const [initialSelectionMade, setInitialSelectionMade] = useState(false);
 
     const PROXY_URL = 'http://localhost:3001';
     const RECOMMENDATIONS_PER_PAGE = 3;
@@ -218,10 +144,6 @@ function App() {
                 });
 
                 setProducts(sortedProducts);
-                 // After sorting, set selected product.
-                if (sortedProducts.length > 0) {
-                   // setSelectedProduct(sortedProducts[0].productId); // Select the first product. Removed, this has to be done on add product only
-                }
             })
             .catch(error => {
                 setLoading(false);
@@ -241,7 +163,10 @@ function App() {
             if (detail) {
                 storeAvailability[storeId] = {
                     hasInventory: detail.hasInvontory,
-                    productAvailable: detail.productAvailable,
+                    basePrice: detail.basePrice,
+                    uomPrice: detail.uomPrice,
+                    havedDiscount: detail.havedDiscount,
+                    percentDiscount: detail.percentDiscount,
                     hall: detail.hall
                 };
                 if (detail.hasInvontory === 1) {
@@ -250,7 +175,10 @@ function App() {
             } else {
                 storeAvailability[storeId] = {
                     hasInventory: false,
-                    productAvailable: false,
+                    basePrice: 'N/A',
+                    uomPrice: 'N/A',
+                    havedDiscount: false,
+                    percentDiscount: 'N/A',
                     hall: 'N/A'
                 };
                 console.warn(`Store detail not found for store ID: ${storeId}`);
@@ -311,16 +239,12 @@ function App() {
         }
 
         if (productIdToAdd && !productIds.includes(productIdToAdd)) {
-            // Update productIds state and then set selected product
             setProductIds(prevProductIds => {
                 const updatedProductIds = [...prevProductIds, productIdToAdd];
-                setSelectedProduct(productIdToAdd); // Select the new product
-                fetchAllProductsAvailability(updatedProductIds); // Refetch all products to include the new one
+                setSelectedProduct(productIdToAdd);
+                fetchAllProductsAvailability(updatedProductIds);
                 return updatedProductIds;
-
             });
-             // setSelectedProduct(productIdToAdd); // set selectedProduct to the new product id.
-             // fetchAllProductsAvailability([...productIds, productIdToAdd]); // fetch all products again with the new id
         }
         setNewProductId('');
     };
@@ -374,7 +298,7 @@ function App() {
                         }
                         return { ...product, availableAnywhere };
                     }
-                    });
+                });
 
                 setRecommendedProducts(filteredRecommendations);
                 setRecommendationStartIndex(0);
@@ -413,6 +337,14 @@ function App() {
         setIsJsonDialogOpen(false);
     };
 
+    const handleOpenStoreDetailsDialog = () => {
+        setIsStoreDetailsDialogOpen(true);
+    };
+
+    const handleCloseStoreDetailsDialog = () => {
+        setIsStoreDetailsDialogOpen(false);
+    };
+
     const handleCopyJson = async () => {
         try {
             await navigator.clipboard.writeText(JSON.stringify(selectedProductJson, null, 2));
@@ -434,6 +366,11 @@ function App() {
     const sortedStores = sortStoresByAvailability();
 
     const displayedRecommendations = recommendedProducts.slice(recommendationStartIndex, recommendationStartIndex + RECOMMENDATIONS_PER_PAGE);
+
+    const storeDetails = stores.map(store => ({
+        ...store,
+        ...availability[store.storeId]
+    }));
 
     return (
         <Container maxWidth="md">
@@ -461,39 +398,16 @@ function App() {
                         onChange={(e) => setNewProductId(e.target.value)}
                         sx={{ mr: 1, flexGrow: 1 }}
                     />
-                    <ElegantButton variant="outlined" onClick={handleAddProduct}>
+                    <Button variant="outlined" onClick={handleAddProduct}>
                         Add Product
-                    </ElegantButton>
+                    </Button>
                 </Box>
 
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                    <InputLabel id="product-select-label">Select a Product</InputLabel>
-                    <Select
-                        labelId="product-select-label"
-                        id="product-select"
-                        value={selectedProduct || ''}
-                        label="Select a Product"
-                        onChange={handleProductChange}
-                        renderValue={(selected) => {
-                            const selectedProductData = products.find(product => product.productId === selected);
-                            return selectedProductData ? (
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <Avatar src={selectedProductData.imageUrl} sx={{ mr: 1, width: 24, height: 24 }} />
-                                    {selectedProductData.name}
-                                </Box>
-                            ) : null;
-                        }}
-                    >
-                        {products.map(product => (
-                            <StyledMenuItem key={product.productId} value={product.productId} available={product.availableAnywhere.toString()}>
-                                <ListItemAvatar>
-                                    <Avatar src={product.imageUrl} />
-                                </ListItemAvatar>
-                                <ListItemText primary={product.name} />
-                            </StyledMenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+                <ProductList
+                    products={products}
+                    selectedProduct={selectedProduct}
+                    handleProductChange={handleProductChange}
+                />
 
                 {loading ? (
                     <CircularProgress />
@@ -518,6 +432,14 @@ function App() {
                             <JsonButton
                                 variant="contained"
                                 size="small"
+                                onClick={handleOpenStoreDetailsDialog}
+                                startIcon={<CodeIcon />}
+                            >
+                                Store Details
+                            </JsonButton>
+                            <JsonButton
+                                variant="contained"
+                                size="small"
                                 onClick={handleOpenJsonDialog}
                                 startIcon={<CodeIcon />}
                             >
@@ -532,103 +454,35 @@ function App() {
                                 <Alert severity="warning">This product is not available in any stores.</Alert>
                             ) : null}
 
-                            <Grid container spacing={2} sx={{ mt: 2 }}>
-                                {sortedStores.map(store => (
-                                    <Grid item xs={12} sm={6} md={4} key={store.storeId}>
-                                        <Typography variant="subtitle1">
-                                            {store.name}
-                                        </Typography>
-                                        {availability[store.storeId] ? (
-                                            <div>
-                                                {availability[store.storeId].hasInventory === 1 ? (
-                                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                        <CheckIcon color="success" sx={{ mr: 1 }} />
-                                                        <Typography variant="body2">
-                                                            In Stock - Hall: {availability[store.storeId].hall}
-                                                        </Typography>
-                                                    </Box>
-                                                ) : availability[store.storeId].hasInventory === 0 ? (
-                                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                        <CloseIcon color="error" sx={{ mr: 1 }} />
-                                                        <Typography variant="body2">Out of Stock</Typography>
-                                                    </Box>
-                                                ) : (
-                                                    <Typography variant="body2">Availability Unknown</Typography>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <Typography variant="body2">Checking...</Typography>
-                                        )}
-                                    </Grid>
-                                ))}
-                            </Grid>
+                            <StoreList
+                                stores={sortedStores}
+                                availability={availability}
+                            />
                         </CardContent>
                     </Card>
                 )}
                 <Divider sx={{ my: 3, width: '100%' }} />
-                <Typography variant="h6" component="h3" sx={{ width: '100%', textAlign: 'left', mb: 1 }}>
-                    Recommended Products
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', overflowX: 'auto', width: '100%', scrollBehavior: 'smooth' }}>
-                    <IconButton onClick={handlePrevRecommendations} disabled={recommendationStartIndex === 0}>
-                        <ArrowBackIosIcon />
-                    </IconButton>
-                    <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 2, width: '100%', overflow: 'hidden' }}>
-                        {displayedRecommendations.map(product => (
-                            <RecommendationCard key={product.productID} sx={{ width: 200, flexShrink: 0 }} available={product.availableAnywhere.toString()}>
-                                <CardMedia
-                                    component="img"
-                                    height="140"
-                                    image={product.imageUrl}
-                                    alt={product.ecomDescription}
-                                    sx={{ objectFit: 'contain', p: 1 }}
-                                />
-                                <CardContent>
-                                    <Typography variant="subtitle1" component="div">
-                                        {product.ecomDescription}
-                                    </Typography>
-                                </CardContent>
-                                <Box sx={{ p: 1 }}>
-                                    <Button
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => addRecommendedProduct(product.productID)}
-                                    >
-                                        Add to List
-                                    </Button>
-                                </Box>
-                            </RecommendationCard>
-                        ))}
-                    </Box>
-                    <IconButton onClick={handleNextRecommendations} disabled={recommendationStartIndex + RECOMMENDATIONS_PER_PAGE >= recommendedProducts.length}>
-                        <ArrowForwardIosIcon />
-                    </IconButton>
-                </Box>
+                <RecommendedProducts
+                    displayedRecommendations={displayedRecommendations}
+                    handlePrevRecommendations={handlePrevRecommendations}
+                    handleNextRecommendations={handleNextRecommendations}
+                    addRecommendedProduct={addRecommendedProduct}
+                    recommendationStartIndex={recommendationStartIndex}
+                    recommendedProducts={recommendedProducts}
+                />
             </Box>
-            <Dialog open={isJsonDialogOpen} onClose={handleCloseJsonDialog} fullWidth maxWidth="md">
-                <DialogTitle>
-                    Product JSON
-                    <Tooltip title={copySuccess ? "Copied!" : "Copy to clipboard"}>
-                        <IconButton
-                            aria-label="copy"
-                            onClick={handleCopyJson}
-                            sx={{ position: 'absolute', right: 8, top: 8 }}
-                        >
-                            <FileCopyIcon />
-                        </IconButton>
-                    </Tooltip>
-                </DialogTitle>
-                <DialogContent>
-                    {selectedProductJson ? (
-                        <JsonViewer value={selectedProductJson} />
-                    ) : (
-                        <Typography>No product selected.</Typography>
-                    )}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseJsonDialog}>Close</Button>
-                </DialogActions>
-            </Dialog>
+            <ProductDialog
+                isJsonDialogOpen={isJsonDialogOpen}
+                handleCloseJsonDialog={handleCloseJsonDialog}
+                selectedProductJson={selectedProductJson}
+                handleCopyJson={handleCopyJson}
+                copySuccess={copySuccess}
+            />
+            <StoreDetailsDialog
+                isOpen={isStoreDetailsDialogOpen}
+                onClose={handleCloseStoreDetailsDialog}
+                storeDetails={storeDetails}
+            />
         </Container>
     );
 }
