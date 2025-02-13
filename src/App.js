@@ -13,11 +13,15 @@ import {
     CardContent,
     Divider,
     IconButton,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
 } from '@mui/material';
-import CodeIcon from '@mui/icons-material/Code';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import CodeIcon from '@mui/icons-material/Code';
 
 import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
 import { JsonButton, ButtonContainer } from './components/StyledComponents';
@@ -26,9 +30,15 @@ import ProductList from './components/ProductList';
 import StoreList from './components/StoreList';
 import RecommendedProducts from './components/RecommendedProducts';
 import StoreDetailsDialog from './components/StoreDetailsDialog';
+import { fetchStores, fetchAllProductsAvailability, fetchRecommendedProducts } from './utils/api';
 
 function App() {
     const { themeMode, toggleTheme } = useContext(ThemeContext);
+    const [storeChains, setStoreChains] = useState([
+        { id: 'chain1', name: 'Auto Mercado' },
+        { id: 'chain2', name: 'PriceSmart' }
+    ]);
+    const [selectedChain, setSelectedChain] = useState('');
     const [stores, setStores] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState('');
     const [productName, setProductName] = useState('');
@@ -49,108 +59,35 @@ function App() {
     const PROXY_URL = 'http://localhost:3001';
     const RECOMMENDATIONS_PER_PAGE = 3;
 
-    const [productIds, setProductIds] = useState([
-        "6a237f75-d599-ec11-b400-000d3a347b43",
-        "1c4d9e75-d599-ec11-b400-000d3a347ca0",
-        "e51c8d70-d599-ec11-b400-000d3a3479fe",
-        "52f2878d-20c5-4ae6-8963-53f895b9d7d6"
-    ]);
+    const [productIds, setProductIds] = useState({
+        chain1: [
+            "6a237f75-d599-ec11-b400-000d3a347b43",
+            "1c4d9e75-d599-ec11-b400-000d3a347ca0",
+            "e51c8d70-d599-ec11-b400-000d3a3479fe",
+            "52f2878d-20c5-4ae6-8963-53f895b9d7d6"
+        ],
+        chain2: [
+            "755713"
+        ]
+    });
 
     useEffect(() => {
-        const fetchStores = async () => {
-            try {
-                const response = await axios.get(`${PROXY_URL}/stores`);
-                const storeData = response.data.data;
-                const formattedStores = storeData.map(store => ({
-                    storeId: store.storeid,
-                    name: store.store
-                }));
-                setStores(formattedStores);
-            } catch (error) {
-                console.error('Error fetching stores:', error);
-                setError('Error fetching stores. Please try again.');
-            }
-        };
-
-        fetchStores();
-
-    }, []);
-
-    useEffect(() => {
-        if (stores.length > 0 && productIds.length > 0) {
-            fetchAllProductsAvailability(productIds);
+        if (selectedChain) {
+            fetchStores(selectedChain, setStores, setError, PROXY_URL);
         }
-    }, [stores, productIds]);
+    }, [selectedChain]);
+
+    useEffect(() => {
+        if (stores.length > 0 && productIds[selectedChain].length > 0) {
+            fetchAllProductsAvailability(selectedChain, productIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL);
+        }
+    }, [stores, productIds, selectedChain]);
 
     useEffect(() => {
         if (selectedProduct) {
-            fetchRecommendedProducts(selectedProduct);
+            fetchRecommendedProducts(selectedProduct, productIds[selectedChain], setRecommendedProducts, setError, setRecommendationStartIndex, PROXY_URL);
         }
     }, [selectedProduct, productIds]);
-
-    const fetchAllProductsAvailability = (productIds) => {
-        setLoading(true);
-        setError(null);
-        setAvailability({});
-        setIsProductAvailable(false);
-
-        Promise.all(productIds.map(productId => {
-            const algoliaRequest = {
-                requests: [
-                    {
-                        indexName: "Product_CatalogueV2",
-                        params: `facetFilters=%5B%22productID%3A${productId}%22%5D&facets=%5B%22marca%22%2C%22addedSugarFree%22%2C%22fiberSource%22%2C%22lactoseFree%22%2C%22lfGlutemFree%22%2C%22lfOrganic%22%2C%22lfVegan%22%2C%22lowFat%22%2C%22lowSodium%22%2C%22preservativeFree%22%2C%22sweetenersFree%22%2C%22parentProductid%22%2C%22parentProductid2%22%2C%22parentProductid_URL%22%2C%22catecom%22%5D`,
-                        clickAnalytics: true
-                    }
-                ]
-            };
-            return axios.post(`${PROXY_URL}/availability`, algoliaRequest, {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-        }))
-            .then(responses => {
-                setLoading(false);
-
-                const productList = responses.map(response => {
-                    const hits = response.data.results[0].hits;
-                    if (hits.length > 0) {
-                        const product = hits[0];
-                        let availableAnywhere = false;
-                        for (const storeId in product.storeDetail) {
-                            if (product.storeDetail[storeId].hasInvontory === 1) {
-                                availableAnywhere = true;
-                                break;
-                            }
-                        }
-                        return {
-                            ...product,
-                            productId: product.productID,
-                            name: product.ecomDescription,
-                            storeDetail: product.storeDetail,
-                            imageUrl: product.imageUrl,
-                            availableAnywhere: availableAnywhere
-                        };
-                    } else {
-                        console.warn('No hits found for the product.');
-                        return null;
-                    }
-                }).filter(product => product !== null);
-
-                const sortedProducts = [...productList].sort((a, b) => {
-                    if (a.availableAnywhere === b.availableAnywhere) return 0;
-                    return a.availableAnywhere ? -1 : 1;
-                });
-
-                setProducts(sortedProducts);
-            })
-            .catch(error => {
-                setLoading(false);
-                setError('Error fetching product availability. Please try again.');
-                console.error('Error checking availability:', error);
-            });
-    };
 
     const setAvailabilityForProduct = (productId, storeDetail, availableAnywhere) => {
         const storeAvailability = {};
@@ -197,11 +134,19 @@ function App() {
         setSelectedProduct(newProductId);
     };
 
+    const handleChainChange = (event) => {
+        const newChainId = event.target.value;
+        setSelectedChain(newChainId);
+        setStores([]);
+        setProducts([]);
+        setSelectedProduct('');
+    };
+
     useEffect(() => {
         if (products.length > 0 && !selectedProduct) {
             setSelectedProduct(products[0].productId);
         }
-    }, [products]);    
+    }, [products]);
 
     useEffect(() => {
         if (selectedProduct) {
@@ -238,11 +183,11 @@ function App() {
             }
         }
 
-        if (productIdToAdd && !productIds.includes(productIdToAdd)) {
+        if (productIdToAdd && !productIds[selectedChain].includes(productIdToAdd)) {
             setProductIds(prevProductIds => {
-                const updatedProductIds = [...prevProductIds, productIdToAdd];
+                const updatedProductIds = { ...prevProductIds, [selectedChain]: [...prevProductIds[selectedChain], productIdToAdd] };
                 setSelectedProduct(productIdToAdd);
-                fetchAllProductsAvailability(updatedProductIds);
+                fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL);
                 return updatedProductIds;
             });
         }
@@ -264,58 +209,9 @@ function App() {
         return [...availableStores, ...unavailableStores];
     };
 
-    const fetchRecommendedProducts = async (productId) => {
-        try {
-            const algoliaRequest = {
-                "requests": [{
-                    "indexName": "Product_CatalogueV2",
-                    "objectID": productId,
-                    "queryParameters": { "clickAnalytics": true },
-                    "model": "related-products",
-                    "threshold": 0
-                }]
-            };
-            const response = await axios.post(
-                `${PROXY_URL}/recommendations`,
-                algoliaRequest,
-                {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-            if (response.data && response.data.results && response.data.results[0].hits) {
-                const filteredRecommendations = response.data.results[0].hits.filter(
-                    (product) => !productIds.includes(product.productID)
-                ).map(product => {
-                    let availableAnywhere = false;
-                    if (product.storeDetail) {
-                        for (const storeId in product.storeDetail) {
-                            if (product.storeDetail[storeId].hasInvontory === 1) {
-                                availableAnywhere = true;
-                                break;
-                            }
-                        }
-                        return { ...product, availableAnywhere };
-                    }
-                });
-
-                setRecommendedProducts(filteredRecommendations);
-                setRecommendationStartIndex(0);
-            } else {
-                console.warn("No recommendations found.");
-                setRecommendedProducts([]);
-            }
-        } catch (error) {
-            console.error("Error fetching recommendations:", error);
-            setError("Error fetching recommended products.");
-            setRecommendedProducts([]);
-        }
-    };
-
     const addRecommendedProduct = (productId) => {
         setProductIds(prevProductIds => {
-            const updatedProductIds = [...prevProductIds, productId];
+            const updatedProductIds = { ...prevProductIds, [selectedChain]: [...prevProductIds[selectedChain], productId] };
             return updatedProductIds;
         });
         setSelectedProduct(productId);
@@ -358,7 +254,9 @@ function App() {
 
     const goToProductSite = () => {
         if (selectedProduct) {
-            const productURL = `https://automercado.cr/p/bebida-gaseosa-zero-sabor-cereza-dr.pepper-lata-355-ml/id/${selectedProduct}`;
+            const productURL = selectedChain === 'chain1'
+                ? `https://automercado.cr/p/bebida-gaseosa-zero-sabor-cereza-dr.pepper-lata-355-ml/id/${selectedProduct}`
+                : `https://www.pricesmart.com/es-CR/producto/members-selection-comida-para-perro-raza-pequena-sabor-avena-y-pollo-9-07-kg-20-lb/${selectedProduct}`;
             window.open(productURL, '_blank'); // Opens in a new tab
         }
     };
@@ -377,7 +275,7 @@ function App() {
             <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                     <Typography variant="h4" component="h1" gutterBottom>
-                        Auto Mercado Availability
+                        {selectedChain === 'chain1' ? 'Auto Mercado Availability' : 'PriceSmart Availability'}
                     </Typography>
                     <IconButton onClick={toggleTheme} color="inherit">
                         {themeMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
@@ -388,6 +286,23 @@ function App() {
                         {error}
                     </Alert>
                 )}
+
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel id="chain-select-label">Select a Store Chain</InputLabel>
+                    <Select
+                        labelId="chain-select-label"
+                        id="chain-select"
+                        value={selectedChain || ''}
+                        label="Select a Store Chain"
+                        onChange={handleChainChange}
+                    >
+                        {storeChains.map(chain => (
+                            <MenuItem key={chain.id} value={chain.id}>
+                                {chain.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 2 }}>
                     <TextField
