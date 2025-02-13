@@ -21,13 +21,21 @@ import {
     Button,
     alpha,
     Divider,
-    IconButton
+    IconButton,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Tooltip
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import CodeIcon from '@mui/icons-material/Code';
+import FileCopyIcon from '@mui/icons-material/FileCopy';
 import { styled } from '@mui/material/styles';
+import { JsonViewer } from '@textea/json-viewer';  // Import @textea/json-viewer
 
 const StyledMenuItem = styled(MenuItem)(({ theme, available }) => ({
     ...(available === 'false' && {
@@ -61,6 +69,22 @@ const RecommendationCard = styled(Card)(({ theme, available }) => ({
     }),
 }));
 
+const JsonButton = styled(Button)(({ theme }) => ({
+    position: 'absolute',
+    top: theme.spacing(1),
+    right: theme.spacing(1),
+    backgroundColor: alpha(theme.palette.primary.main, 0.7),
+    color: theme.palette.common.white,
+    padding: theme.spacing(0.5, 1),
+    minWidth: 0,
+    borderRadius: theme.shape.borderRadius,
+    fontSize: '0.75rem',
+    fontWeight: theme.typography.fontWeightMedium,
+    '&:hover': {
+        backgroundColor: theme.palette.primary.main,
+    },
+}));
+
 function App() {
     const [stores, setStores] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState('');
@@ -74,9 +98,12 @@ function App() {
     const [isProductAvailable, setIsProductAvailable] = useState(false);
     const [recommendedProducts, setRecommendedProducts] = useState([]);
     const [recommendationStartIndex, setRecommendationStartIndex] = useState(0);
+    const [selectedProductJson, setSelectedProductJson] = useState(null);
+    const [isJsonDialogOpen, setIsJsonDialogOpen] = useState(false);
+    const [copySuccess, setCopySuccess] = useState(false);
 
     const PROXY_URL = 'http://localhost:3001';
-    const RECOMMENDATIONS_PER_PAGE = 3; // Number of products to display in each row
+    const RECOMMENDATIONS_PER_PAGE = 3;
 
     const [productIds, setProductIds] = useState([
         "6a237f75-d599-ec11-b400-000d3a347b43",
@@ -86,7 +113,6 @@ function App() {
     ]);
 
     useEffect(() => {
-        // Fetch stores
         const fetchStores = async () => {
             try {
                 const response = await axios.get(`${PROXY_URL}/stores`);
@@ -155,6 +181,7 @@ function App() {
                             }
                         }
                         return {
+                            ...product,
                             productId: product.productID,
                             name: product.ecomDescription,
                             storeDetail: product.storeDetail,
@@ -167,7 +194,6 @@ function App() {
                     }
                 }).filter(product => product !== null);
 
-                // Sort products
                 const sortedProducts = [...productList].sort((a, b) => {
                     if (a.availableAnywhere === b.availableAnywhere) return 0;
                     return a.availableAnywhere ? -1 : 1;
@@ -177,10 +203,6 @@ function App() {
 
                 if (sortedProducts.length > 0) {
                     setSelectedProduct(sortedProducts[0].productId);
-                    setProductName(sortedProducts[0].name);
-                    setProductImage(sortedProducts[0].imageUrl);
-                    setAvailabilityForProduct(sortedProducts[0].productId, sortedProducts[0].storeDetail, sortedProducts[0].availableAnywhere);
-                    setIsProductAvailable(sortedProducts[0].availableAnywhere);
                 }
             })
             .catch(error => {
@@ -224,13 +246,22 @@ function App() {
     const handleProductChange = (event) => {
         const newProductId = event.target.value;
         setSelectedProduct(newProductId);
-
-        const selected = products.find(product => product.productId === newProductId);
-        setProductName(selected.name);
-        setProductImage(selected.imageUrl);
-        setAvailabilityForProduct(newProductId, selected.storeDetail, selected.availableAnywhere);
-        setIsProductAvailable(selected.availableAnywhere);
     };
+
+    useEffect(() => {
+        if (selectedProduct) {
+            const selected = products.find(product => product.productId === selectedProduct);
+            if (selected) {
+                setProductName(selected.name);
+                setProductImage(selected.imageUrl);
+                setAvailabilityForProduct(selected.productId, selected.storeDetail, selected.availableAnywhere);
+                setIsProductAvailable(selected.availableAnywhere);
+                setSelectedProductJson(selected);
+            } else {
+                setSelectedProductJson(null);
+            }
+        }
+    }, [selectedProduct, products]);
 
     const parseProductIdFromUrl = (url) => {
         const regex = /id\/([a-f0-9-]+)$/;
@@ -240,7 +271,6 @@ function App() {
 
     const handleAddProduct = () => {
         let productIdToAdd = newProductId;
-        // Check if the input is a URL
         if (newProductId.startsWith('https://')) {
             const parsedId = parseProductIdFromUrl(newProductId);
             if (parsedId) {
@@ -322,9 +352,11 @@ function App() {
     };
 
     const addRecommendedProduct = (productId) => {
-        if (!productIds.includes(productId)) {
-            setProductIds([...productIds, productId]);
-        }
+        setProductIds(prevProductIds => {
+            const updatedProductIds = [...prevProductIds, productId];
+            return updatedProductIds;
+        });
+        setSelectedProduct(productId);
     };
 
     const handleNextRecommendations = () => {
@@ -333,6 +365,25 @@ function App() {
 
     const handlePrevRecommendations = () => {
         setRecommendationStartIndex(prev => Math.max(prev - RECOMMENDATIONS_PER_PAGE, 0));
+    };
+
+    const handleOpenJsonDialog = () => {
+        setIsJsonDialogOpen(true);
+    };
+
+    const handleCloseJsonDialog = () => {
+        setIsJsonDialogOpen(false);
+    };
+
+    const handleCopyJson = async () => {
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(selectedProductJson, null, 2));
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+            setError('Failed to copy JSON to clipboard.');
+        }
     };
 
     const sortedStores = sortStoresByAvailability();
@@ -371,7 +422,7 @@ function App() {
                     <Select
                         labelId="product-select-label"
                         id="product-select"
-                        value={selectedProduct || ''} //Controlled component, value must be defined.
+                        value={selectedProduct || ''}
                         label="Select a Product"
                         onChange={handleProductChange}
                         renderValue={(selected) => {
@@ -398,7 +449,7 @@ function App() {
                 {loading ? (
                     <CircularProgress />
                 ) : (
-                    <Card sx={{ width: '100%' }}>
+                    <Card sx={{ width: '100%', position: 'relative' }}>
                         <CardMedia
                             component="img"
                             height="200"
@@ -406,6 +457,14 @@ function App() {
                             alt={productName}
                             sx={{ objectFit: 'contain', p: 2 }}
                         />
+                        <JsonButton
+                            variant="contained"
+                            size="small"
+                            onClick={handleOpenJsonDialog}
+                            startIcon={<CodeIcon />}
+                        >
+                            JSON
+                        </JsonButton>
                         <CardContent>
                             <Typography variant="h6" component="div">
                                 {productName}
@@ -487,6 +546,30 @@ function App() {
                     </IconButton>
                 </Box>
             </Box>
+            <Dialog open={isJsonDialogOpen} onClose={handleCloseJsonDialog} fullWidth maxWidth="md">
+                <DialogTitle>
+                    Product JSON
+                    <Tooltip title={copySuccess ? "Copied!" : "Copy to clipboard"}>
+                        <IconButton
+                            aria-label="copy"
+                            onClick={handleCopyJson}
+                            sx={{ position: 'absolute', right: 8, top: 8 }}
+                        >
+                            <FileCopyIcon />
+                        </IconButton>
+                    </Tooltip>
+                </DialogTitle>
+                <DialogContent>
+                    {selectedProductJson ? (
+                        <JsonViewer value={selectedProductJson} />
+                    ) : (
+                        <Typography>No product selected.</Typography>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseJsonDialog}>Close</Button>
+                </DialogActions>
+            </Dialog>
         </Container>
     );
 }
