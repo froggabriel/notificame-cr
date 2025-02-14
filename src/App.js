@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 // Removed unused import
 // import axios from 'axios';
 import {
@@ -38,7 +38,7 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 function App() {
     const { themeMode, toggleTheme } = useContext(ThemeContext);
-    const [storeChains, setStoreChains] = useState([
+    const [storeChains] = useState([
         { id: 'chain1', name: 'Auto Mercado' },
         { id: 'chain2', name: 'PriceSmart' }
     ]);
@@ -97,7 +97,7 @@ function App() {
         serviceWorkerRegistration.register();
     }, []);
 
-    const setAvailabilityForProduct = (productId, storeDetail, availableAnywhere) => {
+    const setAvailabilityForProduct = useCallback((productId, storeDetail, availableAnywhere) => {
         const storeAvailability = {};
         let productAvailableAnywhereVar = false;
 
@@ -135,7 +135,7 @@ function App() {
         });
 
         setIsProductAvailable(productAvailableAnywhereVar);
-    };
+    }, [stores]);
 
     const handleProductChange = (event) => {
         const newProductId = event.target.value;
