@@ -18,13 +18,13 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    OpenInNewIcon,
-    Brightness4Icon,
-    Brightness7Icon,
-    CodeIcon,
-    // Removed unused import
-    // DeleteIcon,
 } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import CodeIcon from '@mui/icons-material/Code';
+// Removed unused import
+// DeleteIcon,
 
 import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
 import { JsonButton, ButtonContainer } from './components/StyledComponents';
