@@ -14,7 +14,7 @@ export const fetchStores = async (chainId, setStores, setError, PROXY_URL) => {
             }));
             setStores(formattedStores);
         } else if (chainId === 'chain2') {
-            const response = await axios.post('https://www.pricesmart.com/api/ct/getProduct', [
+            const response = await axios.post(`${PROXY_URL}/pricesmart-availability`, [
                 { skus: ["755713"] },
                 { products: "getProductBySKU", metadata: { channelId: "5dc40d0e-e2c3-4c3b-9ed5-89fd11634e56" } }
             ], {
@@ -57,7 +57,7 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                     }
                 ]
             };
-            return axios.post(`https://fu5xfx7knl-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.24.0)%3B%20Browser%20(lite)&x-algolia-api-key=${ALGOLIA_API_KEY}&x-algolia-application-id=${ALGOLIA_APP_ID}`, algoliaRequest, {
+            return axios.post(`${PROXY_URL}/availability`, algoliaRequest, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -109,7 +109,7 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                 { skus: [productId] },
                 { products: "getProductBySKU", metadata: { channelId: "5dc40d0e-e2c3-4c3b-9ed5-89fd11634e56" } }
             ];
-            return axios.post('https://www.pricesmart.com/api/ct/getProduct', requestData, {
+            return axios.post(`${PROXY_URL}/pricesmart-availability`, requestData, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -167,7 +167,7 @@ export const fetchRecommendedProducts = async (productId, productIds, setRecomme
             }]
         };
         const response = await axios.post(
-            `https://fu5xfx7knl-dsn.algolia.net/1/indexes/*/recommendations?x-algolia-agent=Algolia%20for%20JavaScript%20(4.24.0)%3B%20Recommend%20(4.24.0)%3B%20Browser&x-algolia-api-key=${ALGOLIA_API_KEY}&x-algolia-application-id=${ALGOLIA_APP_ID}`,
+            `${PROXY_URL}/recommendations`,
             algoliaRequest,
             {
                 headers: {

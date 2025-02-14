@@ -34,3 +34,10 @@ jobs:
           publish_dir: ./build
           # Ensure the token has the necessary permissions
           personal_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Deploy Proxy Server
+        run: |
+          git clone https://github.com/yourusername/your-proxy-repo.git
+          cd your-proxy-repo
+          npm install
+          npm run deploy
