@@ -25,23 +25,13 @@ jobs:
         env:
           REACT_APP_ALGOLIA_API_KEY: ${{ secrets.REACT_APP_ALGOLIA_API_KEY }}
           REACT_APP_ALGOLIA_APP_ID: ${{ secrets.REACT_APP_ALGOLIA_APP_ID }}
+          REACT_APP_PROXY_URL_PROD: ${{ secrets.REACT_APP_PROXY_URL_PROD }}
         run: npm run build
-
-      - name: Build proxy server
-        run: npm run build-proxy
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build
-          # Ensure the token has the necessary permissions
-          personal_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-
-      - name: Deploy Proxy Server to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./proxy-server/build
           # Ensure the token has the necessary permissions
           personal_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
