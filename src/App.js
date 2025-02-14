@@ -32,6 +32,7 @@ import StoreList from './components/StoreList';
 import RecommendedProducts from './components/RecommendedProducts';
 import StoreDetailsDialog from './components/StoreDetailsDialog';
 import { fetchStores, fetchAllProductsAvailability, fetchRecommendedProducts } from './utils/api';
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 function App() {
     const { themeMode, toggleTheme } = useContext(ThemeContext);
@@ -89,6 +90,10 @@ function App() {
             fetchRecommendedProducts(selectedProduct, productIds[selectedChain], setRecommendedProducts, setError, setRecommendationStartIndex, PROXY_URL);
         }
     }, [selectedProduct, productIds]);
+
+    useEffect(() => {
+        serviceWorkerRegistration.register();
+    }, []);
 
     const setAvailabilityForProduct = (productId, storeDetail, availableAnywhere) => {
         const storeAvailability = {};
