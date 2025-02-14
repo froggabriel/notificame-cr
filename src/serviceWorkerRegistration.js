@@ -28,6 +28,14 @@ export function register(config) {
         registerValidSW(swUrl, config);
       }
     });
+
+    // Add listener for beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      window.deferredPrompt = event;
+      // Optionally, show a custom install prompt UI
+      console.log('beforeinstallprompt event fired');
+    });
   }
 }
 
