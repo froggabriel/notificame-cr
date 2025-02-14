@@ -1,5 +1,8 @@
 import axios from 'axios';
 
+const ALGOLIA_API_KEY = process.env.REACT_APP_ALGOLIA_API_KEY;
+const ALGOLIA_APP_ID = process.env.REACT_APP_ALGOLIA_APP_ID;
+
 export const fetchStores = async (chainId, setStores, setError, PROXY_URL) => {
     try {
         if (chainId === 'chain1') {
@@ -54,7 +57,7 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                     }
                 ]
             };
-            return axios.post(`${PROXY_URL}/availability`, algoliaRequest, {
+            return axios.post(`https://fu5xfx7knl-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.24.0)%3B%20Browser%20(lite)&x-algolia-api-key=${ALGOLIA_API_KEY}&x-algolia-application-id=${ALGOLIA_APP_ID}`, algoliaRequest, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -164,7 +167,7 @@ export const fetchRecommendedProducts = async (productId, productIds, setRecomme
             }]
         };
         const response = await axios.post(
-            `${PROXY_URL}/recommendations`,
+            `https://fu5xfx7knl-dsn.algolia.net/1/indexes/*/recommendations?x-algolia-agent=Algolia%20for%20JavaScript%20(4.24.0)%3B%20Recommend%20(4.24.0)%3B%20Browser&x-algolia-api-key=${ALGOLIA_API_KEY}&x-algolia-application-id=${ALGOLIA_APP_ID}`,
             algoliaRequest,
             {
                 headers: {
