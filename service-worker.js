@@ -12,6 +12,8 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(urlsToCache);
+    }).catch((error) => {
+      console.error('Failed to cache assets during install:', error);
     })
   );
 });
@@ -37,4 +39,12 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+});
+
+// Add listener for beforeinstallprompt event
+self.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  window.deferredPrompt = event;
+  // Optionally, show a custom install prompt UI
+  console.log('beforeinstallprompt event fired');
 });
