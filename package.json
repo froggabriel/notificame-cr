@@ -2,7 +2,7 @@
   "name": "am-app",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://github.com/froggabriel/notificame-cr",
+  "homepage": "https://froggabriel.github.io/notificame-cr",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
