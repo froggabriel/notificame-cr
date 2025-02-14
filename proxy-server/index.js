@@ -7,7 +7,7 @@ const port = process.env.PORT || 3001;
 
 // Configure CORS to allow requests from your React app's origin
 const corsOptions = {
-    origin: 'http://localhost:3000', // Replace with your React app's origin in production
+    origin: ['https://froggabriel.github.io', 'http://localhost:3000'],
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 app.use(cors(corsOptions));
