@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/froggabriel/notificame-cr/static/css/main.e6c13ad2.css",
+    "main.js": "/froggabriel/notificame-cr/static/js/main.8dfa7572.js",
+    "static/js/488.2405b4a3.chunk.js": "/froggabriel/notificame-cr/static/js/488.2405b4a3.chunk.js",
+    "index.html": "/froggabriel/notificame-cr/index.html",
+    "main.e6c13ad2.css.map": "/froggabriel/notificame-cr/static/css/main.e6c13ad2.css.map",
+    "main.8dfa7572.js.map": "/froggabriel/notificame-cr/static/js/main.8dfa7572.js.map",
+    "488.2405b4a3.chunk.js.map": "/froggabriel/notificame-cr/static/js/488.2405b4a3.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.8dfa7572.js"
+  ]
+}
