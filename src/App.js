@@ -154,7 +154,7 @@ function App() {
         if (products.length > 0 && !selectedProduct) {
             setSelectedProduct(products[0].productId);
         }
-    }, [products]);
+    }, [products, selectedProduct]);
 
     useEffect(() => {
         if (selectedProduct) {
