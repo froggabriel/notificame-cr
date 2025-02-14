@@ -32,3 +32,5 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build
+          # Ensure the token has the necessary permissions
+          personal_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
