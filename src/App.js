@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+// Removed unused import
+// import axios from 'axios';
 import {
     Container,
     Typography,
@@ -17,12 +18,13 @@ import {
     InputLabel,
     Select,
     MenuItem,
+    OpenInNewIcon,
+    Brightness4Icon,
+    Brightness7Icon,
+    CodeIcon,
+    // Removed unused import
+    // DeleteIcon,
 } from '@mui/material';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import CodeIcon from '@mui/icons-material/Code';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
 import { JsonButton, ButtonContainer } from './components/StyledComponents';
@@ -89,7 +91,7 @@ function App() {
         if (selectedProduct) {
             fetchRecommendedProducts(selectedProduct, productIds[selectedChain], setRecommendedProducts, setError, setRecommendationStartIndex, PROXY_URL);
         }
-    }, [selectedProduct, productIds]);
+    }, [selectedProduct, productIds, selectedChain]);
 
     useEffect(() => {
         serviceWorkerRegistration.register();
@@ -167,7 +169,7 @@ function App() {
                 setSelectedProductJson(null);
             }
         }
-    }, [selectedProduct, products]);
+    }, [selectedProduct, products, setAvailabilityForProduct]);
 
     const parseProductIdFromUrl = (url) => {
         const regex = /id\/([a-f0-9-]+)$/;

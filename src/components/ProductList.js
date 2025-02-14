@@ -3,7 +3,6 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem,
     ListItemAvatar,
     Avatar,
     ListItemText,

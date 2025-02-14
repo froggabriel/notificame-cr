@@ -189,7 +189,8 @@ export const fetchRecommendedProducts = async (productId, productIds, setRecomme
                     }
                     return { ...product, availableAnywhere };
                 }
-            });
+                return null; // Ensure a value is returned
+            }).filter(product => product !== null);
 
             setRecommendedProducts(filteredRecommendations);
             setRecommendationStartIndex(0);
