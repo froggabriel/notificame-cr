@@ -60,7 +60,9 @@ function App() {
     const [isStoreDetailsDialogOpen, setIsStoreDetailsDialogOpen] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
 
-    const PROXY_URL = 'http://localhost:3001';
+    const PROXY_URL = process.env.NODE_ENV === 'production' 
+        ? process.env.REACT_APP_PROXY_URL_PROD 
+        : process.env.REACT_APP_PROXY_URL;
     const RECOMMENDATIONS_PER_PAGE = 3;
 
     const [productIds, setProductIds] = useState({

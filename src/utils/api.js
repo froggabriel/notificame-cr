@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-export const fetchStores = async (chainId, setStores, setError, PROXY_URL) => {
+const PROXY_URL = process.env.NODE_ENV === 'production' 
+    ? process.env.REACT_APP_PROXY_URL_PROD 
+    : process.env.REACT_APP_PROXY_URL;
+
+export const fetchStores = async (chainId, setStores, setError) => {
     try {
         if (chainId === 'chain1') {
             const response = await axios.get(`${PROXY_URL}/stores?chainId=${chainId}`);
@@ -37,7 +41,7 @@ export const fetchStores = async (chainId, setStores, setError, PROXY_URL) => {
     }
 };
 
-export const fetchAllProductsAvailability = (selectedChain, productIds, setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL) => {
+export const fetchAllProductsAvailability = (selectedChain, productIds, setProducts, setLoading, setError, setAvailability, setIsProductAvailable) => {
     setLoading(true);
     setError(null);
     setAvailability({});
@@ -152,7 +156,7 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
     }
 };
 
-export const fetchRecommendedProducts = async (productId, productIds, setRecommendedProducts, setError, setRecommendationStartIndex, PROXY_URL) => {
+export const fetchRecommendedProducts = async (productId, productIds, setRecommendedProducts, setError, setRecommendationStartIndex) => {
     try {
         const algoliaRequest = {
             "requests": [{
