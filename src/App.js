@@ -81,19 +81,19 @@ function App() {
         if (selectedChain) {
             fetchStores(selectedChain, setStores, setError, PROXY_URL);
         }
-    }, [selectedChain]);
+    }, [selectedChain, PROXY_URL]);
 
     useEffect(() => {
         if (stores.length > 0 && productIds[selectedChain].length > 0) {
             fetchAllProductsAvailability(selectedChain, productIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL);
         }
-    }, [stores, productIds, selectedChain]);
+    }, [stores, productIds, selectedChain, PROXY_URL]);
 
     useEffect(() => {
         if (selectedProduct) {
             fetchRecommendedProducts(selectedProduct, productIds[selectedChain], setRecommendedProducts, setError, setRecommendationStartIndex, PROXY_URL);
         }
-    }, [selectedProduct, productIds, selectedChain]);
+    }, [selectedProduct, productIds, selectedChain, PROXY_URL]);
 
     useEffect(() => {
         serviceWorkerRegistration.register();
