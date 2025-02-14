@@ -8,10 +8,17 @@ import {
     Avatar,
     ListItemText,
     Box,
+    IconButton,
 } from '@mui/material';
 import { StyledMenuItem } from './StyledComponents';
+import DeleteIcon from '@mui/icons-material/Delete';
 
-const ProductList = ({ products, selectedProduct, handleProductChange }) => {
+const ProductList = ({ products, selectedProduct, handleProductChange, handleRemoveProduct }) => {
+    const handleRemoveClick = (event, productId) => {
+        event.stopPropagation();
+        handleRemoveProduct(productId);
+    };
+
     return (
         <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel id="product-select-label">Select a Product</InputLabel>
@@ -37,6 +44,9 @@ const ProductList = ({ products, selectedProduct, handleProductChange }) => {
                             <Avatar src={product.imageUrl} />
                         </ListItemAvatar>
                         <ListItemText primary={product.name} />
+                        <IconButton edge="end" aria-label="delete" onClick={(event) => handleRemoveClick(event, product.productId)}>
+                            <DeleteIcon />
+                        </IconButton>
                     </StyledMenuItem>
                 ))}
             </Select>

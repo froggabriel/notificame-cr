@@ -22,6 +22,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import CodeIcon from '@mui/icons-material/Code';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
 import { JsonButton, ButtonContainer } from './components/StyledComponents';
@@ -38,7 +39,7 @@ function App() {
         { id: 'chain1', name: 'Auto Mercado' },
         { id: 'chain2', name: 'PriceSmart' }
     ]);
-    const [selectedChain, setSelectedChain] = useState('');
+    const [selectedChain, setSelectedChain] = useState('chain1');
     const [stores, setStores] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState('');
     const [productName, setProductName] = useState('');
@@ -194,6 +195,17 @@ function App() {
         setNewProductId('');
     };
 
+    const handleRemoveProduct = (productId) => {
+        setProductIds(prevProductIds => {
+            const updatedProductIds = { ...prevProductIds, [selectedChain]: prevProductIds[selectedChain].filter(id => id !== productId) };
+            setProducts(products.filter(product => product.productId !== productId));
+            if (selectedProduct === productId) {
+                setSelectedProduct('');
+            }
+            return updatedProductIds;
+        });
+    };
+
     const sortStoresByAvailability = () => {
         const availableStores = [];
         const unavailableStores = [];
@@ -311,6 +323,7 @@ function App() {
                         size="small"
                         value={newProductId}
                         onChange={(e) => setNewProductId(e.target.value)}
+                        onPaste={(e) => setNewProductId(e.clipboardData.getData('Text'))}
                         sx={{ mr: 1, flexGrow: 1 }}
                     />
                     <Button variant="outlined" onClick={handleAddProduct}>
@@ -322,6 +335,7 @@ function App() {
                     products={products}
                     selectedProduct={selectedProduct}
                     handleProductChange={handleProductChange}
+                    handleRemoveProduct={handleRemoveProduct}
                 />
 
                 {loading ? (

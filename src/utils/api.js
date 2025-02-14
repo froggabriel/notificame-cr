@@ -133,7 +133,7 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                             productId: product.id,
                             name: product.masterData.current.name,
                             storeDetail: storeDetail,
-                            imageUrl: product.masterData.current.masterVariant.images[0]?.url || product.masterData.current.masterVariant.attributesRaw.find(attr => attr.name === 'localized_images')?.value[0] || '',
+                            imageUrl: product.masterData.current.masterVariant.images[0]?.url || product.masterData.current.masterVariant.attributesRaw.find(attr => attr.name === 'localized_images')?.value[0]['es-CR'] || '',
                             availableAnywhere: Object.values(storeDetail).some(detail => detail.hasInvontory === 1)
                         };
                     } else {
