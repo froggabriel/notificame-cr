@@ -178,7 +178,7 @@ function App() {
     }, [selectedProduct, selectedChain, isProductAvailable, productName, productImage, PROXY_URL]);
 
     useEffect(() => {
-        const intervalId = setInterval(checkProductAvailability, 60000); // Check every 60 seconds
+        const intervalId = setInterval(checkProductAvailability, 6000000); // Check every 6000 seconds
         return () => clearInterval(intervalId);
     }, [checkProductAvailability]);
 
@@ -227,7 +227,7 @@ function App() {
                 icon: productImage
             });
         }
-    }, [stores]);
+    }, [stores, productName, productImage]);
 
     const handleProductChange = (event) => {
         const newProductId = event.target.value;
