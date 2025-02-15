@@ -7,7 +7,7 @@ const PROXY_URL = process.env.NODE_ENV === 'production'
 export const fetchStores = async (chainId, setStores, setError) => {
     try {
         if (chainId === 'chain1') {
-            const response = await axios.get(`${PROXY_URL}/stores?chainId=${chainId}`);
+            const response = await axios.get(`${PROXY_URL}/am/stores?chainId=${chainId}`);
             const storeData = response.data.data;
             const formattedStores = storeData.map(store => ({
                 storeId: store.storeid,
@@ -15,7 +15,7 @@ export const fetchStores = async (chainId, setStores, setError) => {
             }));
             setStores(formattedStores);
         } else if (chainId === 'chain2') {
-            const response = await axios.post(`${PROXY_URL}/pricesmart-availability`, [
+            const response = await axios.post(`${PROXY_URL}/ps/availability`, [
                 { skus: ["755713"] },
                 { products: "getProductBySKU", metadata: { channelId: "5dc40d0e-e2c3-4c3b-9ed5-89fd11634e56" } }
             ], {
@@ -58,7 +58,7 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                     }
                 ]
             };
-            return axios.post(`${PROXY_URL}/availability`, algoliaRequest, {
+            return axios.post(`${PROXY_URL}/am/availability`, algoliaRequest, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -110,7 +110,7 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                 { skus: [productId] },
                 { products: "getProductBySKU", metadata: { channelId: "5dc40d0e-e2c3-4c3b-9ed5-89fd11634e56" } }
             ];
-            return axios.post(`${PROXY_URL}/pricesmart-availability`, requestData, {
+            return axios.post(`${PROXY_URL}/ps/availability`, requestData, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -133,8 +133,9 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                                 hall: 'N/A'
                             };
                         });
+                        console.log('produc:', product)
                         return {
-                            productId: product.id,
+                            productId: product.masterData.current.masterVariant.sku,
                             name: product.masterData.current.name,
                             storeDetail: storeDetail,
                             imageUrl: product.masterData.current.masterVariant.images[0]?.url || product.masterData.current.masterVariant.attributesRaw.find(attr => attr.name === 'localized_images')?.value[0]['es-CR'] || '',
@@ -168,7 +169,7 @@ export const fetchRecommendedProducts = async (productId, productIds, setRecomme
             }]
         };
         const response = await axios.post(
-            `${PROXY_URL}/recommendations`,
+            `${PROXY_URL}/am/recommendations`,
             algoliaRequest,
             {
                 headers: {
@@ -203,5 +204,48 @@ export const fetchRecommendedProducts = async (productId, productIds, setRecomme
         console.error("Error fetching recommendations:", error);
         setError("Error fetching recommended products.");
         setRecommendedProducts([]);
+    }
+};
+
+export const fetchChain2SearchResults = async (query, setSearchResults, setError) => {
+    try {
+        const requestData = [
+            {
+                url: "https://www.pricesmart.com/es-CR/producto/members-selection-comida-para-perro-raza-pequena-sabor-avena-y-pollo-9-07-kg-20-lb-755713/755713",
+                q: query,
+                account_id: "7024",
+                auth_key: "ev7libhybjg5h1d1",
+                _br_uid_2: "uid=235309745552:v=15.0:ts=1734377559028:hc=18",
+                request_id: Date.now(),
+                catalog_views: "pricesmart_bloomreach_io_es:CR"
+            }
+        ];
+        const response = await axios.post(`${PROXY_URL}/ps/search`, requestData, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        console.log('fetchChain2SearchResults response:', response.data); // Add this line
+        if (response.data && response.data.suggestionGroups && response.data.suggestionGroups.length > 0) {
+            const searchSuggestions = response.data.suggestionGroups[0].searchSuggestions;
+            if (Array.isArray(searchSuggestions)) {
+                const formattedSuggestions = searchSuggestions.map(suggestion => ({
+                    id: suggestion.master_sku,
+                    text: suggestion.title,
+                    image: suggestion.thumb_image
+                }));
+                console.log('searchSuggestions:', formattedSuggestions); // Add this line
+                setSearchResults(formattedSuggestions);
+            } else {
+                console.warn('searchSuggestions is not an array:', searchSuggestions);
+                setSearchResults([]);
+            }
+        } else {
+            console.warn('No suggestionGroups or searchSuggestions found in response:', response.data);
+            setSearchResults([]);
+        }
+    } catch (error) {
+        console.error("Error fetching search results:", error);
+        setError("Error fetching search results.");
     }
 };

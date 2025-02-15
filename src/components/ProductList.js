@@ -15,6 +15,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 const ProductList = ({ products, selectedProduct, handleProductChange, handleRemoveProduct }) => {
     const handleRemoveClick = (event, productId) => {
         event.stopPropagation();
+        console.log(productId)
         handleRemoveProduct(productId);
     };
 

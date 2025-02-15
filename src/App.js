@@ -35,7 +35,7 @@ import ProductList from './components/ProductList';
 import StoreList from './components/StoreList';
 import RecommendedProducts from './components/RecommendedProducts';
 import StoreDetailsDialog from './components/StoreDetailsDialog';
-import { fetchStores, fetchAllProductsAvailability, fetchRecommendedProducts } from './utils/api';
+import { fetchStores, fetchAllProductsAvailability, fetchRecommendedProducts, fetchChain2SearchResults } from './utils/api';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import ChainSelector from './components/ChainSelector';
 import AppMenu from './components/AppMenu';
@@ -67,6 +67,7 @@ function App() {
     const [anchorEl, setAnchorEl] = useState(null);
     const [showOnlyCRStores, setShowOnlyCRStores] = useState(true);
     const [searchResults, setSearchResults] = useState([]); // Added state for search results
+    const [searchInputValue, setSearchInputValue] = useState(''); // Added state for search input value
 
     const PROXY_URL = process.env.NODE_ENV === 'production' 
         ? process.env.REACT_APP_PROXY_URL_PROD 
@@ -295,8 +296,10 @@ function App() {
     };
 
     const handleRemoveProduct = (productId) => {
+        console.log('Removing product:', productId); // Add this line
         setProductIds(prevProductIds => {
             const updatedProductIds = { ...prevProductIds, [selectedChain]: prevProductIds[selectedChain].filter(id => id !== productId) };
+            console.log('Updated productIds:', updatedProductIds); // Add this line
             setProducts(products.filter(product => product.productId !== productId));
             if (selectedProduct === productId) {
                 setSelectedProduct('');
@@ -304,6 +307,10 @@ function App() {
             return updatedProductIds;
         });
     };
+
+    useEffect(() => {
+        console.log('productIds updated:', productIds); // Add this line
+    }, [productIds]);
 
     const sortStoresByAvailability = () => {
         const availableStores = [];
@@ -398,26 +405,33 @@ function App() {
     };
 
     const handleSearchChange = async (event, value) => {
+        console.log('handleSearchChange value:', value); // Add this line
+        setSearchInputValue(value); // Update search input value
         if (value) {
-            try {
-                const response = await fetch(`${PROXY_URL}/search-products`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
+            if (selectedChain === 'chain2') {
+                fetchChain2SearchResults(value, setSearchResults, setError);
+            } else {
+                try {
+                    const algoliaRequest = {
                         requests: [
                             {
                                 indexName: "Product_CatalogueV2",
                                 params: `query=${value}&hitsPerPage=10&userToken=feba0c89-3a8c-41e0-af46-a379bfd34569&enablePersonalization=true&facets=["marca","addedSugarFree","fiberSource","lactoseFree","lfGlutemFree","lfOrganic","lfVegan","lowFat","lowSodium","preservativeFree","sweetenersFree","parentProductid","parentProductid2","parentProductid_URL","catecom"]&facetFilters=[[]]`
                             }
                         ]
-                    })
-                });
-                const data = await response.json();
-                setSearchResults(data.results[0].hits);
-            } catch (error) {
-                console.error('Error fetching search results:', error);
+                    };
+                    const response = await fetch(`${PROXY_URL}/am/availability`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(algoliaRequest)
+                    });
+                    const data = await response.json();
+                    setSearchResults(data.results[0].hits);
+                } catch (error) {
+                    console.error('Error fetching search results:', error);
+                }
             }
         } else {
             setSearchResults([]);
@@ -425,16 +439,21 @@ function App() {
     };
 
     const handleProductSelect = (event, value) => {
+        console.log('handleProductSelect value:', value); // Add this line
         if (value) {
-            const productIdToAdd = value.objectID;
+            const productIdToAdd = selectedChain === 'chain2' ? value.id : value.objectID;
+            console.log('value:', value)
             if (productIdToAdd && !productIds[selectedChain].includes(productIdToAdd)) {
                 setProductIds(prevProductIds => {
                     const updatedProductIds = { ...prevProductIds, [selectedChain]: [...prevProductIds[selectedChain], productIdToAdd] };
-                    setSelectedProduct(productIdToAdd);
+                    setSelectedProduct(productIdToAdd); // Ensure the selected product is set
                     fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL);
                     return updatedProductIds;
                 });
+            } else {
+                setSelectedProduct(productIdToAdd); // Ensure the selected product is set
             }
+            setSearchInputValue(''); // Clear the search input value
         }
     };
 
@@ -481,38 +500,40 @@ function App() {
                     </Box>
                 </Collapse>
 
-                {selectedChain !== 'chain2' && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 2 }}>
-                        <Autocomplete
-                            freeSolo
-                            options={searchResults}
-                            getOptionLabel={(option) => option.ecomDescription || ''}
-                            onInputChange={handleSearchChange}
-                            onChange={handleProductSelect}
-                            renderOption={(props, option) => (
-                                <Box component="li" {...props}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 2 }}>
+                    <Autocomplete
+                        freeSolo
+                        options={searchResults}
+                        getOptionLabel={(option) => selectedChain === 'chain2' ? option.text || '' : option.ecomDescription || ''}
+                        inputValue={searchInputValue} // Bind input value to state
+                        onInputChange={handleSearchChange}
+                        onChange={handleProductSelect}
+                        renderOption={(props, option, index) => {
+                            const { key, ...rest } = props;
+                            return (
+                                <Box key={`${key}-${index}`} {...rest}>
                                     <img
-                                        src={option.imageUrl}
-                                        alt={option.ecomDescription}
+                                        src={selectedChain === 'chain2' ? option.image : option.imageUrl}
+                                        alt={selectedChain === 'chain2' ? option.text : option.ecomDescription}
                                         style={{ width: '40px', height: '40px', marginRight: '10px' }}
                                     />
-                                    {renderHighlightedText(option._snippetResult.ecomDescription.value)}
+                                    {renderHighlightedText(selectedChain === 'chain2' ? option.text : option._snippetResult.ecomDescription.value)}
                                 </Box>
-                            )}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Search Products"
-                                    variant="outlined"
-                                    size="small"
-                                    fullWidth
-                                    sx={{ flexGrow: 1 }}
-                                />
-                            )}
-                            sx={{ mr: 1,flexGrow: 1 }}
-                        />
-                    </Box>
-                )}
+                            );
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Search Products"
+                                variant="outlined"
+                                size="small"
+                                fullWidth
+                                sx={{ flexGrow: 1 }}
+                            />
+                        )}
+                        sx={{ mr: 1,flexGrow: 1 }}
+                    />
+                </Box>
 
                 <ProductList
                     products={products}

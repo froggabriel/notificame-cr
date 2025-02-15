@@ -1,0 +1,188 @@
+{
+    "queryContext": {
+        "originalQuery": "i"
+    },
+    "suggestionGroups": [
+        {
+            "catalogName": "pricesmart_bloomreach_io_es",
+            "view": "CR",
+            "querySuggestions": [
+                {
+                    "query": "impresora",
+                    "displayText": "impresora"
+                },
+                {
+                    "query": "igloo",
+                    "displayText": "igloo"
+                },
+                {
+                    "query": "ipad",
+                    "displayText": "ipad"
+                },
+                {
+                    "query": "impresora epson",
+                    "displayText": "impresora epson"
+                },
+                {
+                    "query": "colchón inflable",
+                    "displayText": "colchón inflable"
+                },
+                {
+                    "query": "inversor",
+                    "displayText": "inversor"
+                },
+                {
+                    "query": "ivory",
+                    "displayText": "ivory"
+                },
+                {
+                    "query": "cafe instantaneo",
+                    "displayText": "cafe instantaneo"
+                },
+                {
+                    "query": "imperial",
+                    "displayText": "imperial"
+                },
+                {
+                    "query": "inflable",
+                    "displayText": "inflable"
+                },
+                {
+                    "query": "incaparina",
+                    "displayText": "incaparina"
+                },
+                {
+                    "query": "instant pot",
+                    "displayText": "instant pot"
+                },
+                {
+                    "query": "impresora multifuncional",
+                    "displayText": "impresora multifuncional"
+                },
+                {
+                    "query": "bateria inversor",
+                    "displayText": "bateria inversor"
+                },
+                {
+                    "query": "ice cream",
+                    "displayText": "ice cream"
+                },
+                {
+                    "query": "audífonos inalambricos",
+                    "displayText": "audífonos inalambricos"
+                },
+                {
+                    "query": "pan integral",
+                    "displayText": "pan integral"
+                },
+                {
+                    "query": "integral",
+                    "displayText": "integral"
+                },
+                {
+                    "query": "insecticida",
+                    "displayText": "insecticida"
+                },
+                {
+                    "query": "impresora hp",
+                    "displayText": "impresora hp"
+                }
+            ],
+            "searchSuggestions": [
+                {
+                    "sale_price": 0,
+                    "pid": "451832",
+                    "url": "https://www.pricesmart.com/site/cr/es/pagina-producto/451832?_br_psugg_q=impresora",
+                    "thumb_image": "https://d31f1ehqijlcua.cloudfront.net/n/f/2/2/0/f220766ee0e2bda00e4cf583771e696f0a021f01_Printers_451832_01.jpg",
+                    "title": "Epson Impresora EcoTank L1250 Inalámbrica Multifuncional con Wi-Fi C11CJ71301",
+                    "slug": "epson-impresora-ecotank-l1250-inalambrica-multifuncional-con-wi-fi-c11cj71301-451832",
+                    "master_sku": "451832",
+                    "variants": []
+                },
+                {
+                    "sale_price": 0,
+                    "pid": "413551",
+                    "url": "https://www.pricesmart.com/site/cr/es/pagina-producto/413551?_br_psugg_q=impresora",
+                    "thumb_image": "https://d31f1ehqijlcua.cloudfront.net/n/5/0/c/8/50c8218c17a68e4db7d3ad28c8df059c58023340_PrinterPaper_413551_01.jpg",
+                    "title": "Member's Selection Papel Fotográfico 120 Hojas",
+                    "slug": "members-selection-papel-fotografico-120-hojas-413551",
+                    "master_sku": "413551",
+                    "variants": []
+                },
+                {
+                    "sale_price": 0,
+                    "pid": "428665",
+                    "url": "https://www.pricesmart.com/site/cr/es/pagina-producto/428665?_br_psugg_q=impresora",
+                    "thumb_image": "https://d31f1ehqijlcua.cloudfront.net/n/3/5/d/0/35d0fd20e9109a57843a50ec94a846af92dfeb65_Printer_428665_01.jpg",
+                    "title": "Epson Ecotank L3250 Impresora Multifuncional con Control por Voz C11CJ67301",
+                    "slug": "epson-ecotank-l3250-impresora-multifuncional-con-control-por-voz-c11cj67301-428665",
+                    "master_sku": "428665",
+                    "variants": []
+                },
+                {
+                    "sale_price": 0,
+                    "pid": "476181",
+                    "url": "https://www.pricesmart.com/site/cr/es/pagina-producto/476181?_br_psugg_q=impresora",
+                    "thumb_image": "https://d31f1ehqijlcua.cloudfront.net/n/4/0/5/a/405aad9bd748e49701a6b0d32d974d34d4310c7e_Printers_476181_01.jpg",
+                    "title": "HP Smart Tank Impresora a Color con Compatibilidad WiFi 3D4L3AÑAKY",
+                    "slug": "hp-smart-tank-impresora-a-color-con-compatibilidad-wifi-3d4l3anaky-476181",
+                    "master_sku": "476181",
+                    "variants": []
+                },
+                {
+                    "sale_price": 0,
+                    "pid": "456747",
+                    "url": "https://www.pricesmart.com/site/cr/es/pagina-producto/456747?_br_psugg_q=impresora",
+                    "thumb_image": "https://d31f1ehqijlcua.cloudfront.net/n/3/9/c/b/39cb3fb62e13f59ceb50845ee60949623c8f9d48_Printers_456747_01.jpg",
+                    "title": "HP Smart Tank 580 Impresora Multifuncional Wi-Fi 1F3Y2A#AKY",
+                    "slug": "hp-smart-tank-580-impresora-multifuncional-wi-fi-1f3y2aaky-456747",
+                    "master_sku": "456747",
+                    "variants": []
+                },
+                {
+                    "sale_price": 0,
+                    "pid": "18802",
+                    "url": "https://www.pricesmart.com/site/cr/es/pagina-producto/18802?_br_psugg_q=impresora",
+                    "thumb_image": "https://d31f1ehqijlcua.cloudfront.net/n/6/d/0/4/6d045cc4eb285955f20a821794cfd2b137b3d86f_LaminatingMachines_18802_01.jpg",
+                    "title": "Brother Maquina para Etiquetar Eléctrica Portátil con Impresora y Teclado QWERTY",
+                    "slug": "brother-maquina-para-etiquetar-electrica-portatil-con-impresora-y-teclado-qwerty-18802",
+                    "master_sku": "18802",
+                    "variants": []
+                },
+                {
+                    "sale_price": 0,
+                    "pid": "467074",
+                    "url": "https://www.pricesmart.com/site/cr/es/pagina-producto/467074?_br_psugg_q=impresora",
+                    "thumb_image": "https://d31f1ehqijlcua.cloudfront.net/n/5/f/7/1/5f71d0d7f8c8e8c2b0728281a76ef0b0fcf698b5_PrinterPaper_467074_01.jpg",
+                    "title": "NuGiant Resma de Papel para Impresora Tamaño Carta 800 Hojas",
+                    "slug": "nugiant-resma-de-papel-para-impresora-tamano-carta-800-hojas-467074",
+                    "master_sku": "467074",
+                    "variants": []
+                },
+                {
+                    "sale_price": 0,
+                    "pid": "710199",
+                    "url": "https://www.pricesmart.com/site/cr/es/pagina-producto/710199?_br_psugg_q=impresora",
+                    "thumb_image": "https://d31f1ehqijlcua.cloudfront.net/n/8/5/7/a/857a077bd5a5ea61b2bfaa33cdf5d890f9be6ef5_CopyPaper_710199_01.jpg",
+                    "title": "Hp Papel para Copiado 10 Unidades / 21.6 cm x 27.9 cm / 8.5\" x 11\"",
+                    "slug": "hp-papel-para-copiado-10-unidades-21-6-cm-x-27-9-cm-8-5-in-x-11-in-710199",
+                    "master_sku": "710199",
+                    "variants": []
+                }
+            ],
+            "product_suggest_query": null,
+            "attributeSuggestions": [
+                {
+                    "name": "Impresoras",
+                    "value": "C10D25004",
+                    "attributeType": "category"
+                },
+                {
+                    "name": "Papel para fotocopiadoras e impresoras",
+                    "value": "O10D25009002",
+                    "attributeType": "category"
+                }
+            ]
+        }
+    ]
+}
