@@ -41,6 +41,18 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+self.addEventListener('push', (event) => {
+  const data = event.data.json();
+  const options = {
+    body: data.body,
+    icon: data.icon,
+    badge: data.badge
+  };
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
 // Add listener for beforeinstallprompt event
 self.addEventListener('beforeinstallprompt', (event) => {
   event.preventDefault();
