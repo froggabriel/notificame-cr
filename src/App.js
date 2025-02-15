@@ -14,6 +14,7 @@ import {
     Divider,
     IconButton,
     Collapse,
+    Autocomplete // Added Autocomplete import
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import StoreIcon from '@mui/icons-material/Store'; // Changed icon import
@@ -66,6 +67,7 @@ function App() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const [showOnlyCRStores, setShowOnlyCRStores] = useState(true);
+    const [searchResults, setSearchResults] = useState([]); // Added state for search results
 
     const PROXY_URL = process.env.NODE_ENV === 'production' 
         ? process.env.REACT_APP_PROXY_URL_PROD 
@@ -314,6 +316,58 @@ function App() {
         setShowOnlyCRStores(prev => !prev);
     };
 
+    const handleSearchChange = async (event, value) => {
+        if (value) {
+            try {
+                const response = await fetch(`${PROXY_URL}/search-products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        requests: [
+                            {
+                                indexName: "Product_CatalogueV2",
+                                params: `query=${value}&hitsPerPage=10&userToken=feba0c89-3a8c-41e0-af46-a379bfd34569&enablePersonalization=true&facets=["marca","addedSugarFree","fiberSource","lactoseFree","lfGlutemFree","lfOrganic","lfVegan","lowFat","lowSodium","preservativeFree","sweetenersFree","parentProductid","parentProductid2","parentProductid_URL","catecom"]&facetFilters=[[]]`
+                            }
+                        ]
+                    })
+                });
+                const data = await response.json();
+                setSearchResults(data.results[0].hits);
+                console.log('Search Results:', data.results[0].hits); // Log the search results
+            } catch (error) {
+                console.error('Error fetching search results:', error);
+            }
+        } else {
+            setSearchResults([]);
+        }
+    };
+
+    const handleProductSelect = (event, value) => {
+        if (value) {
+            const productIdToAdd = value.objectID;
+            if (productIdToAdd && !productIds[selectedChain].includes(productIdToAdd)) {
+                setProductIds(prevProductIds => {
+                    const updatedProductIds = { ...prevProductIds, [selectedChain]: [...prevProductIds[selectedChain], productIdToAdd] };
+                    setSelectedProduct(productIdToAdd);
+                    fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL);
+                    return updatedProductIds;
+                });
+            }
+        }
+    };
+
+    const renderHighlightedText = (text) => {
+        const parts = text.split(/(<em>.*?<\/em>)/g).map((part, index) => {
+            if (part.startsWith('<em>') && part.endsWith('</em>')) {
+                return <strong key={index}>{part.slice(4, -5)}</strong>;
+            }
+            return part;
+        });
+        return <span>{parts}</span>;
+    };
+
     return (
         <Container maxWidth="md">
             <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -330,7 +384,7 @@ function App() {
                     </Alert>
                 )}
 
-                <Collapse in={isMenuOpen} sx={{ width: '100%', mb: 2 }}>
+                <Collapse in={isMenuOpen} sx={{ width: '100%', mb: 2 }} inert={!isMenuOpen}>
                     <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 2 }}>
                         <TextField
                             label="Add Product ID or URL"
@@ -339,13 +393,46 @@ function App() {
                             value={newProductId}
                             onChange={(e) => setNewProductId(e.target.value)}
                             onPaste={(e) => setNewProductId(e.clipboardData.getData('Text'))}
-                            sx={{ mr: 1, flexGrow: 1 }}
+                            sx={{ mr: 1,flexGrow: 1 }}
                         />
                         <ElegantButton variant="outlined" onClick={handleAddProduct}>
                             Add Product
                         </ElegantButton>
                     </Box>
                 </Collapse>
+
+                {selectedChain !== 'chain2' && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 2 }}>
+                        <Autocomplete
+                            freeSolo
+                            options={searchResults}
+                            getOptionLabel={(option) => option.ecomDescription || ''}
+                            onInputChange={handleSearchChange}
+                            onChange={handleProductSelect}
+                            renderOption={(props, option) => (
+                                <Box component="li" {...props}>
+                                    <img
+                                        src={option.imageUrl}
+                                        alt={option.ecomDescription}
+                                        style={{ width: '40px', height: '40px', marginRight: '10px' }}
+                                    />
+                                    {renderHighlightedText(option._snippetResult.ecomDescription.value)}
+                                </Box>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Search Products"
+                                    variant="outlined"
+                                    size="small"
+                                    fullWidth
+                                    sx={{ flexGrow: 1 }}
+                                />
+                            )}
+                            sx={{ mr: 1,flexGrow: 1 }}
+                        />
+                    </Box>
+                )}
 
                 <ProductList
                     products={products}
