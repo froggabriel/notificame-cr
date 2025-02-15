@@ -46,6 +46,11 @@ export const JsonButton = styled(Button)(({ theme }) => ({
     '&:hover': {
         backgroundColor: theme.palette.primary.main,
     },
+    '@media (max-width: 600px)': {
+        '.button-text': {
+            display: 'none',
+        },
+    },
 }));
 
 export const ButtonContainer = styled(Box)(({ theme }) => ({
@@ -57,4 +62,5 @@ export const ButtonContainer = styled(Box)(({ theme }) => ({
     gap: theme.spacing(1), // Spacing between buttons
     width: 'max-content', // Width based on content
     maxWidth: '200px', // Prevent content from becoming too wide
+    marginTop: theme.spacing(2), // Add margin to avoid overlapping with text
 }));

@@ -22,6 +22,7 @@ import {
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import StoreIcon from '@mui/icons-material/Store'; // Changed icon import
 import CodeIcon from '@mui/icons-material/Code';
 // Removed unused import
 // DeleteIcon,
@@ -351,39 +352,51 @@ function App() {
                     <CircularProgress />
                 ) : (
                     <Card sx={{ width: '100%', position: 'relative' }}>
-                        <CardMedia
-                            component="img"
-                            height="200"
-                            image={productImage}
-                            alt={productName}
-                            sx={{ objectFit: 'contain', p: 2 }}
-                        />
-                        <ButtonContainer>
-                            <JsonButton
-                                variant="contained"
-                                size="small"
-                                onClick={goToProductSite}
-                                startIcon={<OpenInNewIcon />}
-                            >
-                                Go to Site
-                            </JsonButton>
-                            <JsonButton
-                                variant="contained"
-                                size="small"
-                                onClick={handleOpenStoreDetailsDialog}
-                                startIcon={<CodeIcon />}
-                            >
-                                Store Details
-                            </JsonButton>
-                            <JsonButton
-                                variant="contained"
-                                size="small"
-                                onClick={handleOpenJsonDialog}
-                                startIcon={<CodeIcon />}
-                            >
-                                JSON
-                            </JsonButton>
-                        </ButtonContainer>
+                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' } }}>
+                            <CardMedia
+                                component="img"
+                                height="200"
+                                image={productImage}
+                                alt={productName}
+                                sx={{ 
+                                    objectFit: 'contain', 
+                                    p: 2, 
+                                    width: { xs: '100%', sm: '50%' }, 
+                                    '@media (max-width: 600px)': { alignSelf: 'flex-start', marginLeft: 0 } // Align image to the left on narrow screens
+                                }} 
+                            />
+                            <Box sx={{ display: 'flex', flexDirection: 'column', width: { xs: '100%', sm: '50%' } }}>
+                                <ButtonContainer>
+                                    <JsonButton
+                                        variant="contained"
+                                        size="small"
+                                        onClick={goToProductSite}
+                                        startIcon={<OpenInNewIcon />}
+                                        sx={{ justifyContent: 'flex-start', '@media (max-width: 600px)': { justifyContent: 'center', minWidth: 'auto', padding: '6px' } }} // Align text to the left and show only icon on narrow screens
+                                    >
+                                        <span className="button-text">Go to Site</span>
+                                    </JsonButton>
+                                    <JsonButton
+                                        variant="contained"
+                                        size="small"
+                                        onClick={handleOpenStoreDetailsDialog}
+                                        startIcon={<StoreIcon />} // Changed icon
+                                        sx={{ justifyContent: 'flex-start', '@media (max-width: 600px)': { justifyContent: 'center', minWidth: 'auto', padding: '6px' } }} // Align text to the left and show only icon on narrow screens
+                                    >
+                                        <span className="button-text">Store Details</span>
+                                    </JsonButton>
+                                    <JsonButton
+                                        variant="contained"
+                                        size="small"
+                                        onClick={handleOpenJsonDialog}
+                                        startIcon={<CodeIcon />}
+                                        sx={{ justifyContent: 'flex-start', '@media (max-width: 600px)': { justifyContent: 'center', minWidth: 'auto', padding: '6px' } }} // Align text to the left and show only icon on narrow screens
+                                    >
+                                        <span className="button-text">JSON</span>
+                                    </JsonButton>
+                                </ButtonContainer>
+                            </Box>
+                        </Box>
                         <CardContent>
                             <Typography variant="h6" component="div">
                                 {productName}
