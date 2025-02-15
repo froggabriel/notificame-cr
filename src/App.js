@@ -74,7 +74,22 @@ function App() {
         : process.env.REACT_APP_PROXY_URL;
     const RECOMMENDATIONS_PER_PAGE = 3;
 
-    const [productIds, setProductIds] = useState({
+    const LOCAL_STORAGE_KEY = 'productIds';
+
+    // Function to load state from local storage
+    const loadStateFromLocalStorage = () => {
+        try {
+            const serializedState = localStorage.getItem(LOCAL_STORAGE_KEY);
+            return serializedState ? JSON.parse(serializedState) : null;
+        } catch (error) {
+            console.error('Error loading state from local storage:', error);
+            return null;
+        }
+    };
+
+    const savedState = loadStateFromLocalStorage();
+
+    const [productIds, setProductIds] = useState(savedState || {
         chain1: [
             "6a237f75-d599-ec11-b400-000d3a347b43",
             "1c4d9e75-d599-ec11-b400-000d3a347ca0",
@@ -85,6 +100,21 @@ function App() {
             "755713"
         ]
     });
+
+    // Function to save state to local storage
+    const saveStateToLocalStorage = (state) => {
+        try {
+            const serializedState = JSON.stringify(state);
+            localStorage.setItem(LOCAL_STORAGE_KEY, serializedState);
+        } catch (error) {
+            console.error('Error saving state to local storage:', error);
+        }
+    };
+
+    // Save state to local storage whenever productIds changes
+    useEffect(() => {
+        saveStateToLocalStorage(productIds);
+    }, [productIds]);
 
     useEffect(() => {
         if (selectedChain) {
@@ -335,7 +365,6 @@ function App() {
                 });
                 const data = await response.json();
                 setSearchResults(data.results[0].hits);
-                console.log('Search Results:', data.results[0].hits); // Log the search results
             } catch (error) {
                 console.error('Error fetching search results:', error);
             }
@@ -384,7 +413,7 @@ function App() {
                     </Alert>
                 )}
 
-                <Collapse in={isMenuOpen} sx={{ width: '100%', mb: 2 }} inert={!isMenuOpen}>
+                <Collapse in={isMenuOpen} sx={{ width: '100%', mb: 2 }} inert={isMenuOpen.toString()}>
                     <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 2 }}>
                         <TextField
                             label="Add Product ID or URL"
