@@ -11,8 +11,8 @@ export const StyledMenuItem = styled(MenuItem)(({ theme, available }) => ({
 }));
 
 export const ElegantButton = styled(Button)(({ theme }) => ({
-    color: theme.palette.text.secondary,
-    borderColor: alpha(theme.palette.text.secondary, 0.5),
+    color: theme.palette.mode === 'dark' ? theme.palette.text.primary : theme.palette.text.secondary,
+    borderColor: alpha(theme.palette.mode === 'dark' ? theme.palette.text.primary : theme.palette.text.secondary, 0.5),
     "&:hover": {
         backgroundColor: alpha(theme.palette.primary.main, 0.05),
         borderColor: theme.palette.primary.main,
@@ -34,8 +34,8 @@ export const RecommendationCard = styled(Card)(({ theme, available }) => ({
 }));
 
 export const JsonButton = styled(Button)(({ theme }) => ({
-    backgroundColor: alpha(theme.palette.primary.main, 0.7),
-    color: theme.palette.common.white,
+    backgroundColor: alpha(theme.palette.mode === 'dark' ? theme.palette.text.primary : theme.palette.text.secondary, 0.7),
+    color: theme.palette.mode === 'dark' ? theme.palette.common.black : theme.palette.common.white,
     padding: theme.spacing(0.5, 1),
     minWidth: 0,
     borderRadius: theme.shape.borderRadius,
@@ -44,7 +44,7 @@ export const JsonButton = styled(Button)(({ theme }) => ({
     width: '100%', // Full width of the container
     boxSizing: 'border-box', // Include padding and border in the element's total width and height
     '&:hover': {
-        backgroundColor: theme.palette.primary.main,
+        backgroundColor: theme.palette.mode === 'dark' ? theme.palette.text.primary : theme.palette.text.secondary,
     },
     '@media (max-width: 600px)': {
         '.button-text': {

@@ -14,21 +14,23 @@ import {
     CardContent,
     Divider,
     IconButton,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
+    Collapse,
+    Menu,
+    MenuItem as MuiMenuItem,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import StoreIcon from '@mui/icons-material/Store'; // Changed icon import
 import CodeIcon from '@mui/icons-material/Code';
+import MenuIcon from '@mui/icons-material/Menu';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 // Removed unused import
 // DeleteIcon,
 
 import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
-import { JsonButton, ButtonContainer } from './components/StyledComponents';
+import { JsonButton, ButtonContainer, ElegantButton } from './components/StyledComponents';
 import ProductDialog from './components/ProductDialog';
 import ProductList from './components/ProductList';
 import StoreList from './components/StoreList';
@@ -36,12 +38,14 @@ import RecommendedProducts from './components/RecommendedProducts';
 import StoreDetailsDialog from './components/StoreDetailsDialog';
 import { fetchStores, fetchAllProductsAvailability, fetchRecommendedProducts } from './utils/api';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+import ChainSelector from './components/ChainSelector';
+import AppMenu from './components/AppMenu';
 
 function App() {
     const { themeMode, toggleTheme } = useContext(ThemeContext);
     const [storeChains] = useState([
-        { id: 'chain1', name: 'Auto Mercado' },
-        { id: 'chain2', name: 'PriceSmart' }
+        { id: 'chain1', name: 'Auto Mercado', image: 'https://automercado.cr/content/images/ico/cropped-Icono-Auto-Mercado-1-1-192x192.png' },
+        { id: 'chain2', name: 'PriceSmart', image: 'https://pricesmart.bloomreach.io/delivery/resources/content/gallery/pricesmart/header/logomobile.svg' }
     ]);
     const [selectedChain, setSelectedChain] = useState('chain1');
     const [stores, setStores] = useState([]);
@@ -60,6 +64,8 @@ function App() {
     const [isJsonDialogOpen, setIsJsonDialogOpen] = useState(false);
     const [isStoreDetailsDialogOpen, setIsStoreDetailsDialogOpen] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
 
     const PROXY_URL = process.env.NODE_ENV === 'production' 
         ? process.env.REACT_APP_PROXY_URL_PROD 
@@ -292,16 +298,23 @@ function App() {
         ...availability[store.storeId]
     }));
 
+    const handleMenuOpen = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+
     return (
         <Container maxWidth="md">
             <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                    <Typography variant="h4" component="h1" gutterBottom>
-                        {selectedChain === 'chain1' ? 'Auto Mercado Availability' : 'PriceSmart Availability'}
-                    </Typography>
-                    <IconButton onClick={toggleTheme} color="inherit">
-                        {themeMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                    <ChainSelector selectedChain={selectedChain} storeChains={storeChains} handleChainChange={handleChainChange} />
+                    <IconButton onClick={handleMenuOpen} color="inherit">
+                        <MenuIcon />
                     </IconButton>
+                    <AppMenu anchorEl={anchorEl} handleMenuClose={handleMenuClose} toggleTheme={toggleTheme} themeMode={themeMode} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
                 </Box>
                 {error && (
                     <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
@@ -309,37 +322,22 @@ function App() {
                     </Alert>
                 )}
 
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                    <InputLabel id="chain-select-label">Select a Store Chain</InputLabel>
-                    <Select
-                        labelId="chain-select-label"
-                        id="chain-select"
-                        value={selectedChain || ''}
-                        label="Select a Store Chain"
-                        onChange={handleChainChange}
-                    >
-                        {storeChains.map(chain => (
-                            <MenuItem key={chain.id} value={chain.id}>
-                                {chain.name}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 2 }}>
-                    <TextField
-                        label="Add Product ID or URL"
-                        variant="outlined"
-                        size="small"
-                        value={newProductId}
-                        onChange={(e) => setNewProductId(e.target.value)}
-                        onPaste={(e) => setNewProductId(e.clipboardData.getData('Text'))}
-                        sx={{ mr: 1, flexGrow: 1 }}
-                    />
-                    <Button variant="outlined" onClick={handleAddProduct}>
-                        Add Product
-                    </Button>
-                </Box>
+                <Collapse in={isMenuOpen} sx={{ width: '100%', mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 2 }}>
+                        <TextField
+                            label="Add Product ID or URL"
+                            variant="outlined"
+                            size="small"
+                            value={newProductId}
+                            onChange={(e) => setNewProductId(e.target.value)}
+                            onPaste={(e) => setNewProductId(e.clipboardData.getData('Text'))}
+                            sx={{ mr: 1, flexGrow: 1 }}
+                        />
+                        <ElegantButton variant="outlined" onClick={handleAddProduct}>
+                            Add Product
+                        </ElegantButton>
+                    </Box>
+                </Collapse>
 
                 <ProductList
                     products={products}
