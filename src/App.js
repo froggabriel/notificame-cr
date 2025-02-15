@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 // Removed unused import
 // import axios from 'axios';
 import {
@@ -71,6 +71,7 @@ function App() {
     const [searchResults, setSearchResults] = useState([]); // Added state for search results
     const [searchInputValue, setSearchInputValue] = useState(''); // Added state for search input value
     const [isSearchOpen, setIsSearchOpen] = useState(false); // Add state for search bar visibility
+    const searchInputRef = useRef(null); // Add reference for search input
 
     const PROXY_URL = process.env.NODE_ENV === 'production' 
         ? process.env.REACT_APP_PROXY_URL_PROD 
@@ -472,6 +473,11 @@ function App() {
 
     const handleSearchIconClick = () => {
         setIsSearchOpen(prev => !prev);
+        if (!isSearchOpen) {
+            setTimeout(() => {
+                searchInputRef.current.focus(); // Focus the search input when it is opened
+            }, 0);
+        }
     };
 
     const handleSearchClose = () => {
@@ -512,6 +518,7 @@ function App() {
                                         variant="outlined"
                                         size="small"
                                         fullWidth
+                                        inputRef={searchInputRef} // Attach reference to the search input
                                         sx={{ flexGrow: 1 }}
                                     />
                                 )}
