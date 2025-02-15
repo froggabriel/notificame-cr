@@ -8,26 +8,25 @@ import {
     Alert,
     Box,
     TextField,
-    Button,
     Card,
     CardMedia,
     CardContent,
     Divider,
     IconButton,
     Collapse,
-    Menu,
-    MenuItem as MuiMenuItem,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
 import StoreIcon from '@mui/icons-material/Store'; // Changed icon import
 import CodeIcon from '@mui/icons-material/Code';
 import MenuIcon from '@mui/icons-material/Menu';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-// Removed unused import
-// DeleteIcon,
+// Removed unused imports
+// import Button from '@mui/material/Button';
+// import Menu from '@mui/material/Menu';
+// import MenuItem as MuiMenuItem from '@mui/material/MenuItem';
+// import Brightness4Icon from '@mui/icons-material/Brightness4';
+// import Brightness7Icon from '@mui/icons-material/Brightness7';
+// import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+// import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
 import { JsonButton, ButtonContainer, ElegantButton } from './components/StyledComponents';
