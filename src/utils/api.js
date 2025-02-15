@@ -124,8 +124,9 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                     if (product && product.masterData && product.masterData.current && product.masterData.current.masterVariant && product.masterData.current.masterVariant.availability && product.masterData.current.masterVariant.availability.channels && product.masterData.current.masterVariant.availability.channels.results) {
                         const storeDetail = {};
                         product.masterData.current.masterVariant.availability.channels.results.forEach(store => {
+                            console.log('store:', store)
                             storeDetail[store.channel.id] = {
-                                hasInvontory: store.isOnStock ? 1 : 0,
+                                hasInvontory: store.availability.isOnStock ? 1 : 0,
                                 basePrice: product.masterData.current.masterVariant.price.value.centAmount / 100,
                                 uomPrice: product.masterData.current.masterVariant.price.value.centAmount / 100,
                                 havedDiscount: false,
@@ -134,6 +135,7 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                             };
                         });
                         console.log('produc:', product)
+                        console.log('storeDetail:', storeDetail)
                         return {
                             productId: product.masterData.current.masterVariant.sku,
                             name: product.masterData.current.name,
