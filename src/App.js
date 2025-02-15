@@ -128,9 +128,9 @@ function App() {
 
     useEffect(() => {
         if (stores.length > 0 && productIds[selectedChain].length > 0) {
-            fetchAllProductsAvailability(selectedChain, productIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL);
+            fetchAllProductsAvailability(selectedChain, productIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores);
         }
-    }, [stores, productIds, selectedChain, PROXY_URL]);
+    }, [stores, productIds, selectedChain, PROXY_URL, showOnlyCRStores]);
 
     useEffect(() => {
         if (selectedProduct) {
@@ -167,7 +167,7 @@ function App() {
 
     const checkProductAvailability = useCallback(() => {
         if (selectedProduct) {
-            fetchAllProductsAvailability(selectedChain, [selectedProduct], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL)
+            fetchAllProductsAvailability(selectedChain, [selectedProduct], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores)
                 .then(() => {
                     if (isProductAvailable) {
                         sendNotification('Product Available', {
@@ -180,7 +180,7 @@ function App() {
                     console.error('Error checking product availability:', error);
                 });
         }
-    }, [selectedProduct, selectedChain, isProductAvailable, productName, productImage, PROXY_URL]);
+    }, [selectedProduct, selectedChain, isProductAvailable, productName, productImage, PROXY_URL, showOnlyCRStores, stores]);
 
     useEffect(() => {
         const intervalId = setInterval(checkProductAvailability, 6000000); // Check every 6000 seconds
@@ -292,7 +292,7 @@ function App() {
             setProductIds(prevProductIds => {
                 const updatedProductIds = { ...prevProductIds, [selectedChain]: [...prevProductIds[selectedChain], productIdToAdd] };
                 setSelectedProduct(productIdToAdd);
-                fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL);
+                fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores);
                 return updatedProductIds;
             });
         }
@@ -451,7 +451,7 @@ function App() {
                 setProductIds(prevProductIds => {
                     const updatedProductIds = { ...prevProductIds, [selectedChain]: [...prevProductIds[selectedChain], productIdToAdd] };
                     setSelectedProduct(productIdToAdd); // Ensure the selected product is set
-                    fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL);
+                    fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores);
                     return updatedProductIds;
                 });
             } else {

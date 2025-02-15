@@ -41,11 +41,16 @@ export const fetchStores = async (chainId, setStores, setError) => {
     }
 };
 
-export const fetchAllProductsAvailability = (selectedChain, productIds, setProducts, setLoading, setError, setAvailability, setIsProductAvailable) => {
+export const fetchAllProductsAvailability = (selectedChain, productIds, setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores) => {
     setLoading(true);
     setError(null);
     setAvailability({});
     setIsProductAvailable(false);
+
+    const costaRicaStoreNames = ['Llorente', 'Escazú', 'Alajuela', 'Cartago', 'Zapote', 'Heredia', 'Tres Ríos', 'Liberia'];
+    const costaRicaStoreIds = stores
+        .filter(store => costaRicaStoreNames.includes(store.name))
+        .map(store => store.storeId);
 
     if (selectedChain === 'chain1') {
         Promise.all(productIds.map(productId => {
@@ -124,7 +129,6 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                     if (product && product.masterData && product.masterData.current && product.masterData.current.masterVariant && product.masterData.current.masterVariant.availability && product.masterData.current.masterVariant.availability.channels && product.masterData.current.masterVariant.availability.channels.results) {
                         const storeDetail = {};
                         product.masterData.current.masterVariant.availability.channels.results.forEach(store => {
-                            console.log('store:', store)
                             storeDetail[store.channel.id] = {
                                 hasInvontory: store.availability.isOnStock ? 1 : 0,
                                 basePrice: product.masterData.current.masterVariant.price.value.centAmount / 100,
@@ -134,14 +138,17 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                                 hall: 'N/A'
                             };
                         });
-                        console.log('produc:', product)
-                        console.log('storeDetail:', storeDetail)
+
+                        const availableAnywhere = showOnlyCRStores
+                            ? costaRicaStoreIds.some(storeId => storeDetail[storeId] && storeDetail[storeId].hasInvontory === 1)
+                            : Object.values(storeDetail).some(detail => detail.hasInvontory === 1);
+
                         return {
                             productId: product.masterData.current.masterVariant.sku,
                             name: product.masterData.current.name,
                             storeDetail: storeDetail,
                             imageUrl: product.masterData.current.masterVariant.images[0]?.url || product.masterData.current.masterVariant.attributesRaw.find(attr => attr.name === 'localized_images')?.value[0]['es-CR'] || '',
-                            availableAnywhere: Object.values(storeDetail).some(detail => detail.hasInvontory === 1)
+                            availableAnywhere: availableAnywhere
                         };
                     } else {
                         console.warn('No product found.');
