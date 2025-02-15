@@ -65,6 +65,7 @@ function App() {
     const [copySuccess, setCopySuccess] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
+    const [showOnlyCRStores, setShowOnlyCRStores] = useState(true);
 
     const PROXY_URL = process.env.NODE_ENV === 'production' 
         ? process.env.REACT_APP_PROXY_URL_PROD 
@@ -290,6 +291,10 @@ function App() {
 
     const sortedStores = sortStoresByAvailability();
 
+    const displayedStores = selectedChain === 'chain2' && showOnlyCRStores
+        ? sortedStores.filter(store => ['Llorente', 'Escazú', 'Alajuela', 'Cartago', 'Zapote', 'Heredia', 'Tres Ríos', 'Liberia'].includes(store.name))
+        : sortedStores;
+
     const displayedRecommendations = recommendedProducts.slice(recommendationStartIndex, recommendationStartIndex + RECOMMENDATIONS_PER_PAGE);
 
     const storeDetails = stores.map(store => ({
@@ -305,6 +310,10 @@ function App() {
         setAnchorEl(null);
     };
 
+    const toggleShowOnlyCRStores = () => {
+        setShowOnlyCRStores(prev => !prev);
+    };
+
     return (
         <Container maxWidth="md">
             <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -313,7 +322,7 @@ function App() {
                     <IconButton onClick={handleMenuOpen} color="inherit">
                         <MenuIcon />
                     </IconButton>
-                    <AppMenu anchorEl={anchorEl} handleMenuClose={handleMenuClose} toggleTheme={toggleTheme} themeMode={themeMode} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
+                    <AppMenu anchorEl={anchorEl} handleMenuClose={handleMenuClose} toggleTheme={toggleTheme} themeMode={themeMode} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} toggleShowOnlyCRStores={toggleShowOnlyCRStores} showOnlyCRStores={showOnlyCRStores} />
                 </Box>
                 {error && (
                     <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
@@ -403,7 +412,7 @@ function App() {
                             ) : null}
 
                             <StoreList
-                                stores={sortedStores}
+                                stores={displayedStores}
                                 availability={availability}
                             />
                         </CardContent>
