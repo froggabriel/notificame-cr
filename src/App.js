@@ -3,7 +3,6 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 // import axios from 'axios';
 import {
     Container,
-    Typography,
     CircularProgress,
     Alert,
     Box,
@@ -138,6 +137,51 @@ function App() {
         serviceWorkerRegistration.register();
     }, []);
 
+    const requestNotificationPermission = async () => {
+        if ('Notification' in window && navigator.serviceWorker) {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                console.log('Notification permission granted.');
+            } else {
+                console.log('Notification permission denied.');
+            }
+        }
+    };
+
+    const sendNotification = (title, options) => {
+        if ('Notification' in window && navigator.serviceWorker) {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.showNotification(title, options);
+            });
+        }
+    };
+
+    useEffect(() => {
+        requestNotificationPermission();
+    }, []);
+
+    const checkProductAvailability = useCallback(() => {
+        if (selectedProduct) {
+            fetchAllProductsAvailability(selectedChain, [selectedProduct], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL)
+                .then(() => {
+                    if (isProductAvailable) {
+                        sendNotification('Product Available', {
+                            body: `The product ${productName} is now available.`,
+                            icon: productImage
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking product availability:', error);
+                });
+        }
+    }, [selectedProduct, selectedChain, isProductAvailable, productName, productImage, PROXY_URL]);
+
+    useEffect(() => {
+        const intervalId = setInterval(checkProductAvailability, 60000); // Check every 60 seconds
+        return () => clearInterval(intervalId);
+    }, [checkProductAvailability]);
+
     const setAvailabilityForProduct = useCallback((productId, storeDetail, availableAnywhere) => {
         const storeAvailability = {};
         let productAvailableAnywhereVar = false;
@@ -176,6 +220,13 @@ function App() {
         });
 
         setIsProductAvailable(productAvailableAnywhereVar);
+
+        if (productAvailableAnywhereVar) {
+            sendNotification('Product Available', {
+                body: `The product ${productName} is now available.`,
+                icon: productImage
+            });
+        }
     }, [stores]);
 
     const handleProductChange = (event) => {
@@ -520,9 +571,6 @@ function App() {
                             </Box>
                         </Box>
                         <CardContent>
-                            <Typography variant="h6" component="div">
-                                {productName}
-                            </Typography>
                             {!isProductAvailable && products.length > 0 ? (
                                 <Alert severity="warning">This product is not available in any stores.</Alert>
                             ) : null}
