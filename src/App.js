@@ -583,7 +583,7 @@ function App() {
                                             <img
                                                 src={selectedChain === 'chain2' ? option.image : option.imageUrl}
                                                 alt={selectedChain === 'chain2' ? option.text : option.ecomDescription}
-                                                style={{ width: '40px', height: '40px', marginRight: '10px' }}
+                                                style={{ width: '80px', height: '80px', marginRight: '10px' }} // Increase image size
                                             />
                                             {renderHighlightedText(selectedChain === 'chain2' ? option.text : option._snippetResult.ecomDescription.value)}
                                         </Box>
@@ -606,9 +606,6 @@ function App() {
                         <IconButton onClick={handleSearchIconClick} color="inherit">
                             {isSearchOpen ? <CloseIcon /> : <SearchIcon />}
                         </IconButton>
-                        <IconButton onClick={handleOpenAddProductModal} color="inherit"> {/* Add button to open modal */}
-                            <AddIcon />
-                        </IconButton>
                         <IconButton onClick={handleMenuOpen} color="inherit">
                             <MenuIcon />
                         </IconButton>
@@ -621,12 +618,21 @@ function App() {
                     </Alert>
                 )}
 
-                <ProductList
-                    products={products}
-                    selectedProduct={selectedProducts[selectedChain]}
-                    handleProductChange={handleProductChange}
-                    handleRemoveProduct={handleRemoveProduct}
-                />
+                <Box sx={{ display: 'flex', width: '100%', alignItems: 'center', mt: 4 }}> {/* Increase margin above the product list */}
+                    <ProductList
+                        products={products}
+                        selectedProduct={selectedProducts[selectedChain]}
+                        handleProductChange={handleProductChange}
+                        handleRemoveProduct={handleRemoveProduct}
+                        imageSize={{ width: '80px', height: '80px' }} // Set image size for product list
+                        sx={{ flexGrow: 1 }}
+                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', ml: 2, mt: -2 }}> {/* Adjust vertical alignment */}
+                        <IconButton onClick={handleOpenAddProductModal} color="inherit">
+                            <AddIcon />
+                        </IconButton>
+                    </Box>
+                </Box>
 
                 {loading ? (
                     <CircularProgress />

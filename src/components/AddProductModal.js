@@ -1,6 +1,7 @@
 import React from 'react';
-import { Modal, Box, TextField, Button, IconButton } from '@mui/material';
+import { Modal, Box, TextField, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { ElegantButton } from './StyledComponents'; // Import ElegantButton
 
 const style = {
     position: 'absolute',
@@ -32,9 +33,9 @@ const AddProductModal = ({ open, handleClose, newProductId, setNewProductId, han
                     onChange={(e) => setNewProductId(e.target.value)}
                     sx={{ mb: 2 }}
                 />
-                <Button variant="contained" onClick={handleAddProduct} fullWidth>
+                <ElegantButton variant="outlined" onClick={handleAddProduct} fullWidth>
                     Add Product
-                </Button>
+                </ElegantButton>
             </Box>
         </Modal>
     );
