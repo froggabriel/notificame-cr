@@ -22,10 +22,6 @@ const AppMenu = ({ anchorEl, handleMenuClose, toggleTheme, themeMode, isMenuOpen
                     label="Show only stores in Costa Rica"
                 />
             </MenuItem>
-            <MenuItem onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                {isMenuOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                <Typography sx={{ ml: 1 }}>{'Add Products'}</Typography>
-            </MenuItem>
         </Menu>
     );
 };

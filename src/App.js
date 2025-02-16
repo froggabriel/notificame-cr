@@ -29,6 +29,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 // import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import SearchIcon from '@mui/icons-material/Search'; // Add SearchIcon import
 import CloseIcon from '@mui/icons-material/Close'; // Add CloseIcon import
+import AddProductModal from './components/AddProductModal'; // Add AddProductModal import
+import AddIcon from '@mui/icons-material/Add'; // Add AddIcon import
 
 import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
 import { JsonButton, ButtonContainer, ElegantButton } from './components/StyledComponents';
@@ -74,6 +76,7 @@ function App() {
     const debouncedSearchInputValue = useDebounce(searchInputValue, 100); // Add debounced search input value
     const [isSearchOpen, setIsSearchOpen] = useState(false); // Add state for search bar visibility
     const searchInputRef = useRef(null); // Add reference for search input
+    const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false); // Add state for modal visibility
 
     const PROXY_URL = process.env.NODE_ENV === 'production' 
         ? process.env.REACT_APP_PROXY_URL_PROD 
@@ -295,13 +298,20 @@ function App() {
     }, [selectedProducts, selectedChain, products, setAvailabilityForProduct]);
 
     const parseProductIdFromUrl = (url) => {
-        const regex = /id\/([a-f0-9-]+)$/;
+        let regex;
+        if (url.includes('automercado.cr')) {
+            regex = /id\/([a-f0-9-]+)$/;
+        } else if (url.includes('pricesmart.com')) {
+            regex = /\/(\d+)$/;
+        } else {
+            return null;
+        }
         const match = url.match(regex);
         return match ? match[1] : null;
     };
 
     const handleAddProduct = () => {
-        let productIdToAdd = newProductId;
+        let productIdToAdd = newProductId.trim();
 
         // Check if the input is a URL
         if (newProductId.startsWith('https://')) {
@@ -326,6 +336,7 @@ function App() {
             });
         }
         setNewProductId('');
+        handleCloseAddProductModal(); // Close the modal after adding the product
     };
 
     const handleRemoveProduct = (productId) => {
@@ -543,6 +554,14 @@ function App() {
         }
     };
 
+    const handleOpenAddProductModal = () => {
+        setIsAddProductModalOpen(true);
+    };
+
+    const handleCloseAddProductModal = () => {
+        setIsAddProductModalOpen(false);
+    };
+
     return (
         <Container maxWidth="md">
             <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -587,6 +606,9 @@ function App() {
                         <IconButton onClick={handleSearchIconClick} color="inherit">
                             {isSearchOpen ? <CloseIcon /> : <SearchIcon />}
                         </IconButton>
+                        <IconButton onClick={handleOpenAddProductModal} color="inherit"> {/* Add button to open modal */}
+                            <AddIcon />
+                        </IconButton>
                         <IconButton onClick={handleMenuOpen} color="inherit">
                             <MenuIcon />
                         </IconButton>
@@ -598,23 +620,6 @@ function App() {
                         {error}
                     </Alert>
                 )}
-
-                <Collapse in={isMenuOpen} sx={{ width: '100%', mb: 2 }} inert={isMenuOpen.toString()}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 2 }}>
-                        <TextField
-                            label="Add Product ID or URL"
-                            variant="outlined"
-                            size="small"
-                            value={newProductId}
-                            onChange={(e) => setNewProductId(e.target.value)}
-                            onPaste={(e) => setNewProductId(e.clipboardData.getData('Text'))}
-                            sx={{ mr: 1,flexGrow: 1 }}
-                        />
-                        <ElegantButton variant="outlined" onClick={handleAddProduct}>
-                            Add Product
-                        </ElegantButton>
-                    </Box>
-                </Collapse>
 
                 <ProductList
                     products={products}
@@ -707,6 +712,13 @@ function App() {
                 isOpen={isStoreDetailsDialogOpen}
                 onClose={handleCloseStoreDetailsDialog}
                 storeDetails={storeDetails}
+            />
+            <AddProductModal // Add the AddProductModal component
+                open={isAddProductModalOpen}
+                handleClose={handleCloseAddProductModal}
+                newProductId={newProductId}
+                setNewProductId={setNewProductId}
+                handleAddProduct={handleAddProduct}
             />
         </Container>
     );
