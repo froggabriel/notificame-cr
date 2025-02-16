@@ -227,7 +227,9 @@ function App() {
                     hall: 'N/A',
                     quantity: 'N/A' // Add quantity
                 };
-                console.warn(`Store detail not found for store ID: ${storeId}`);
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn(`Store detail not found for store ID: ${storeId}`);
+                }
             }
             setAvailability(storeAvailability);
             if (detail && detail.hasInvontory === 1) {
@@ -258,6 +260,10 @@ function App() {
         setSelectedChain(newChainId);
         setStores([]);
         setProducts([]);
+        setSelectedProducts(prevSelectedProducts => ({
+            ...prevSelectedProducts,
+            [newChainId]: ''
+        }));
     };
 
     useEffect(() => {
@@ -278,8 +284,6 @@ function App() {
                 setAvailabilityForProduct(selected.productId, selected.storeDetail, selected.availableAnywhere);
                 setIsProductAvailable(selected.availableAnywhere);
                 setSelectedProductJson(selected);
-                console.log('Selected product:', selected);
-                console.log('Availability:', availability);
             } else {
                 setSelectedProductJson(null);
             }
@@ -321,10 +325,14 @@ function App() {
     };
 
     const handleRemoveProduct = (productId) => {
-        console.log('Removing product:', productId); // Add this line
+        if (process.env.NODE_ENV === 'development') {
+            console.log('Removing product:', productId);
+        }
         setProductIds(prevProductIds => {
             const updatedProductIds = { ...prevProductIds, [selectedChain]: prevProductIds[selectedChain].filter(id => id !== productId) };
-            console.log('Updated productIds:', updatedProductIds); // Add this line
+            if (process.env.NODE_ENV === 'development') {
+                console.log('Updated productIds:', updatedProductIds);
+            }
             setProducts(products.filter(product => product.productId !== productId));
             if (selectedProducts[selectedChain] === productId) {
                 setSelectedProducts(prevSelectedProducts => ({
@@ -337,7 +345,9 @@ function App() {
     };
 
     useEffect(() => {
-        console.log('productIds updated:', productIds); // Add this line
+        if (process.env.NODE_ENV === 'development') {
+            console.log('productIds updated:', productIds);
+        }
     }, [productIds]);
 
     const sortStoresByAvailability = () => {
@@ -442,7 +452,9 @@ function App() {
     };
 
     const handleSearchChange = async (event, value) => {
-        console.log('handleSearchChange value:', value); // Add this line
+        if (process.env.NODE_ENV === 'development') {
+            console.log('handleSearchChange value:', value);
+        }
         setSearchInputValue(value); // Update search input value
         if (value) {
             if (selectedChain === 'chain2') {
@@ -476,10 +488,14 @@ function App() {
     };
 
     const handleProductSelect = (event, value) => {
-        console.log('handleProductSelect value:', value); // Add this line
+        if (process.env.NODE_ENV === 'development') {
+            console.log('handleProductSelect value:', value);
+        }
         if (value) {
             const productIdToAdd = selectedChain === 'chain2' ? value.id : value.objectID;
-            console.log('value:', value)
+            if (process.env.NODE_ENV === 'development') {
+                console.log('value:', value)
+            }
             if (productIdToAdd && !productIds[selectedChain].includes(productIdToAdd)) {
                 setProductIds(prevProductIds => {
                     const updatedProductIds = { ...prevProductIds, [selectedChain]: [...prevProductIds[selectedChain], productIdToAdd] };
@@ -517,19 +533,6 @@ function App() {
                 searchInputRef.current.focus(); // Focus the search input when it is opened
             }, 0);
         }
-    };
-
-    const handleSearchClose = () => {
-        setIsSearchOpen(false);
-    };
-
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('es-CR', {
-            style: 'currency',
-            currency: 'CRC',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(price).replace(/\s/g, '.');
     };
 
     return (
