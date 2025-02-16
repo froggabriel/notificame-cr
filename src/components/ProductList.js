@@ -8,6 +8,7 @@ import {
     ListItemText,
     Box,
     IconButton,
+    Typography // Add Typography import
 } from '@mui/material';
 import { StyledMenuItem } from './StyledComponents';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -17,6 +18,15 @@ const ProductList = ({ products, selectedProduct, handleProductChange, handleRem
         event.stopPropagation();
         console.log(productId)
         handleRemoveProduct(productId);
+    };
+
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('es-CR', {
+            style: 'currency',
+            currency: 'CRC',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(price).replace(/\s/g, '.');
     };
 
     return (
@@ -43,7 +53,14 @@ const ProductList = ({ products, selectedProduct, handleProductChange, handleRem
                         <ListItemAvatar>
                             <Avatar src={product.imageUrl} />
                         </ListItemAvatar>
-                        <ListItemText primary={product.name} />
+                        <ListItemText 
+                            primary={product.name} 
+                            secondary={
+                                <Typography variant="body2" color="textSecondary">
+                                    {formatPrice(product.storeDetail[Object.keys(product.storeDetail)[0]].basePrice)}
+                                </Typography>
+                            }
+                        />
                         <IconButton edge="end" aria-label="delete" onClick={(event) => handleRemoveClick(event, product.productId)}>
                             <DeleteIcon />
                         </IconButton>

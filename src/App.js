@@ -202,7 +202,8 @@ function App() {
                     uomPrice: detail.uomPrice,
                     havedDiscount: detail.havedDiscount,
                     percentDiscount: detail.percentDiscount,
-                    hall: detail.hall
+                    hall: detail.hall,
+                    quantity: detail.quantity // Add quantity
                 };
                 if (detail.hasInvontory === 1) {
                     productAvailableAnywhereVar = true;
@@ -214,7 +215,8 @@ function App() {
                     uomPrice: 'N/A',
                     havedDiscount: false,
                     percentDiscount: 'N/A',
-                    hall: 'N/A'
+                    hall: 'N/A',
+                    quantity: 'N/A' // Add quantity
                 };
                 console.warn(`Store detail not found for store ID: ${storeId}`);
             }
@@ -262,6 +264,8 @@ function App() {
                 setAvailabilityForProduct(selected.productId, selected.storeDetail, selected.availableAnywhere);
                 setIsProductAvailable(selected.availableAnywhere);
                 setSelectedProductJson(selected);
+                console.log('Selected product:', selected);
+                console.log('Availability:', availability);
             } else {
                 setSelectedProductJson(null);
             }
@@ -348,6 +352,12 @@ function App() {
     };
 
     const handleOpenJsonDialog = () => {
+        if (selectedChain === 'chain2') {
+            const selected = products.find(product => product.productId === selectedProduct);
+            setSelectedProductJson(selected);
+        } else {
+            setSelectedProductJson(selectedProductJson);
+        }
         setIsJsonDialogOpen(true);
     };
 
@@ -484,6 +494,15 @@ function App() {
         setIsSearchOpen(false);
     };
 
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('es-CR', {
+            style: 'currency',
+            currency: 'CRC',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(price).replace(/\s/g, '.');
+    };
+
     return (
         <Container maxWidth="md">
             <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -582,6 +601,7 @@ function App() {
                                 }} 
                             />
                             <Box sx={{ display: 'flex', flexDirection: 'column', width: { xs: '100%', sm: '50%' } }}>
+
                                 <ButtonContainer>
                                     <JsonButton
                                         variant="contained"
@@ -621,6 +641,7 @@ function App() {
                             <StoreList
                                 stores={displayedStores}
                                 availability={availability}
+                                selectedChain={selectedChain} // Pass selectedChain prop
                             />
                         </CardContent>
                     </Card>

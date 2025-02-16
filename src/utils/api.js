@@ -126,6 +126,7 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
 
                 const productList = responses.map(response => {
                     const product = response.data.data.products.results[0];
+                    console.log('product:', product); // Add this line
                     if (product && product.masterData && product.masterData.current && product.masterData.current.masterVariant && product.masterData.current.masterVariant.availability && product.masterData.current.masterVariant.availability.channels && product.masterData.current.masterVariant.availability.channels.results) {
                         const storeDetail = {};
                         product.masterData.current.masterVariant.availability.channels.results.forEach(store => {
@@ -135,7 +136,8 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                                 uomPrice: product.masterData.current.masterVariant.price.value.centAmount / 100,
                                 havedDiscount: false,
                                 percentDiscount: 'N/A',
-                                hall: 'N/A'
+                                hall: 'N/A',
+                                quantity: store.availability.availableQuantity // Add availableQuantity
                             };
                         });
 
@@ -148,7 +150,8 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                             name: product.masterData.current.name,
                             storeDetail: storeDetail,
                             imageUrl: product.masterData.current.masterVariant.images[0]?.url || product.masterData.current.masterVariant.attributesRaw.find(attr => attr.name === 'localized_images')?.value[0]['es-CR'] || '',
-                            availableAnywhere: availableAnywhere
+                            availableAnywhere: availableAnywhere,
+                            basePrice: product.masterData.current.masterVariant.price.value.centAmount / 100
                         };
                     } else {
                         console.warn('No product found.');
