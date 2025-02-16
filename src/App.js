@@ -12,7 +12,6 @@ import {
     CardContent,
     Divider,
     IconButton,
-    Collapse,
     Autocomplete // Added Autocomplete import
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -33,8 +32,8 @@ import AddProductModal from './components/AddProductModal'; // Add AddProductMod
 import AddIcon from '@mui/icons-material/Add'; // Add AddIcon import
 
 import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
-import { JsonButton, ButtonContainer, ElegantButton } from './components/StyledComponents';
-import ProductDialog from './components/ProductDialog';
+import { JsonButton, ButtonContainer } from './components/StyledComponents';
+import ProductDialog from './components/ProductDialog'; // Keep this import
 import ProductList from './components/ProductList';
 import StoreList from './components/StoreList';
 import RecommendedProducts from './components/RecommendedProducts';
