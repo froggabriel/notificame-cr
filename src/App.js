@@ -725,6 +725,7 @@ function App() {
                 setNewProductId={setNewProductId}
                 handleAddProduct={handleAddProduct}
             />
+            <a href="https://www.flaticon.com/free-icons/groceries" title="groceries icons">Groceries icons created by Uniconlabs - Flaticon</a>
         </Container>
     );
 }
