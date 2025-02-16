@@ -259,13 +259,15 @@ function App() {
 
     const handleChainChange = (event) => {
         const newChainId = event.target.value;
-        setSelectedChain(newChainId);
-        setStores([]);
-        setProducts([]);
-        setSelectedProducts(prevSelectedProducts => ({
-            ...prevSelectedProducts,
-            [newChainId]: ''
-        }));
+        if (newChainId !== selectedChain) {
+            setSelectedChain(newChainId);
+            setStores([]);
+            setProducts([]);
+            setSelectedProducts(prevSelectedProducts => ({
+                ...prevSelectedProducts,
+                [newChainId]: ''
+            }));
+        }
     };
 
     useEffect(() => {
