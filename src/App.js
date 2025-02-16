@@ -48,9 +48,9 @@ function App() {
         { id: 'chain1', name: 'Auto Mercado', image: 'https://automercado.cr/content/images/ico/cropped-Icono-Auto-Mercado-1-1-192x192.png' },
         { id: 'chain2', name: 'PriceSmart', image: 'https://pricesmart.bloomreach.io/delivery/resources/content/gallery/pricesmart/header/logomobile.svg' }
     ]);
-    const [selectedChain, setSelectedChain] = useState('chain1');
+    const [selectedChain, setSelectedChain] = useState(localStorage.getItem('selectedChain') || 'chain1');
     const [stores, setStores] = useState([]);
-    const [selectedProduct, setSelectedProduct] = useState('');
+    const [selectedProducts, setSelectedProducts] = useState(JSON.parse(localStorage.getItem('selectedProducts')) || { chain1: '', chain2: '' });
     const [productName, setProductName] = useState('');
     const [productImage, setProductImage] = useState('');
     const [availability, setAvailability] = useState({});
@@ -120,6 +120,15 @@ function App() {
         saveStateToLocalStorage(productIds);
     }, [productIds]);
 
+    // Save selected chain and products to local storage whenever they change
+    useEffect(() => {
+        localStorage.setItem('selectedChain', selectedChain);
+    }, [selectedChain]);
+
+    useEffect(() => {
+        localStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
+    }, [selectedProducts]);
+
     useEffect(() => {
         if (selectedChain) {
             fetchStores(selectedChain, setStores, setError, PROXY_URL);
@@ -133,10 +142,10 @@ function App() {
     }, [stores, productIds, selectedChain, PROXY_URL, showOnlyCRStores]);
 
     useEffect(() => {
-        if (selectedProduct) {
-            fetchRecommendedProducts(selectedProduct, productIds[selectedChain], setRecommendedProducts, setError, setRecommendationStartIndex, PROXY_URL);
+        if (selectedProducts[selectedChain]) {
+            fetchRecommendedProducts(selectedProducts[selectedChain], productIds[selectedChain], setRecommendedProducts, setError, setRecommendationStartIndex, PROXY_URL);
         }
-    }, [selectedProduct, productIds, selectedChain, PROXY_URL]);
+    }, [selectedProducts, productIds, selectedChain, PROXY_URL]);
 
     useEffect(() => {
         serviceWorkerRegistration.register();
@@ -166,8 +175,8 @@ function App() {
     }, []);
 
     const checkProductAvailability = useCallback(() => {
-        if (selectedProduct) {
-            fetchAllProductsAvailability(selectedChain, [selectedProduct], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores)
+        if (selectedProducts[selectedChain]) {
+            fetchAllProductsAvailability(selectedChain, [selectedProducts[selectedChain]], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores)
                 .then(() => {
                     if (isProductAvailable) {
                         sendNotification('Product Available', {
@@ -180,7 +189,7 @@ function App() {
                     console.error('Error checking product availability:', error);
                 });
         }
-    }, [selectedProduct, selectedChain, isProductAvailable, productName, productImage, PROXY_URL, showOnlyCRStores, stores]);
+    }, [selectedProducts, selectedChain, isProductAvailable, productName, productImage, PROXY_URL, showOnlyCRStores, stores]);
 
     useEffect(() => {
         const intervalId = setInterval(checkProductAvailability, 6000000); // Check every 6000 seconds
@@ -238,7 +247,10 @@ function App() {
 
     const handleProductChange = (event) => {
         const newProductId = event.target.value;
-        setSelectedProduct(newProductId);
+        setSelectedProducts(prevSelectedProducts => ({
+            ...prevSelectedProducts,
+            [selectedChain]: newProductId
+        }));
     };
 
     const handleChainChange = (event) => {
@@ -246,18 +258,20 @@ function App() {
         setSelectedChain(newChainId);
         setStores([]);
         setProducts([]);
-        setSelectedProduct('');
     };
 
     useEffect(() => {
-        if (products.length > 0 && !selectedProduct) {
-            setSelectedProduct(products[0].productId);
+        if (products.length > 0 && !selectedProducts[selectedChain]) {
+            setSelectedProducts(prevSelectedProducts => ({
+                ...prevSelectedProducts,
+                [selectedChain]: products[0].productId
+            }));
         }
-    }, [products, selectedProduct]);
+    }, [products, selectedProducts, selectedChain]);
 
     useEffect(() => {
-        if (selectedProduct) {
-            const selected = products.find(product => product.productId === selectedProduct);
+        if (selectedProducts[selectedChain]) {
+            const selected = products.find(product => product.productId === selectedProducts[selectedChain]);
             if (selected) {
                 setProductName(selected.name);
                 setProductImage(selected.imageUrl);
@@ -270,7 +284,7 @@ function App() {
                 setSelectedProductJson(null);
             }
         }
-    }, [selectedProduct, products, setAvailabilityForProduct]);
+    }, [selectedProducts, selectedChain, products, setAvailabilityForProduct]);
 
     const parseProductIdFromUrl = (url) => {
         const regex = /id\/([a-f0-9-]+)$/;
@@ -295,7 +309,10 @@ function App() {
         if (productIdToAdd && !productIds[selectedChain].includes(productIdToAdd)) {
             setProductIds(prevProductIds => {
                 const updatedProductIds = { ...prevProductIds, [selectedChain]: [...prevProductIds[selectedChain], productIdToAdd] };
-                setSelectedProduct(productIdToAdd);
+                setSelectedProducts(prevSelectedProducts => ({
+                    ...prevSelectedProducts,
+                    [selectedChain]: productIdToAdd
+                }));
                 fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores);
                 return updatedProductIds;
             });
@@ -309,8 +326,11 @@ function App() {
             const updatedProductIds = { ...prevProductIds, [selectedChain]: prevProductIds[selectedChain].filter(id => id !== productId) };
             console.log('Updated productIds:', updatedProductIds); // Add this line
             setProducts(products.filter(product => product.productId !== productId));
-            if (selectedProduct === productId) {
-                setSelectedProduct('');
+            if (selectedProducts[selectedChain] === productId) {
+                setSelectedProducts(prevSelectedProducts => ({
+                    ...prevSelectedProducts,
+                    [selectedChain]: ''
+                }));
             }
             return updatedProductIds;
         });
@@ -340,7 +360,10 @@ function App() {
             const updatedProductIds = { ...prevProductIds, [selectedChain]: [...prevProductIds[selectedChain], productId] };
             return updatedProductIds;
         });
-        setSelectedProduct(productId);
+        setSelectedProducts(prevSelectedProducts => ({
+            ...prevSelectedProducts,
+            [selectedChain]: productId
+        }));
     };
 
     const handleNextRecommendations = () => {
@@ -353,7 +376,7 @@ function App() {
 
     const handleOpenJsonDialog = () => {
         if (selectedChain === 'chain2') {
-            const selected = products.find(product => product.productId === selectedProduct);
+            const selected = products.find(product => product.productId === selectedProducts[selectedChain]);
             setSelectedProductJson(selected);
         } else {
             setSelectedProductJson(selectedProductJson);
@@ -385,10 +408,10 @@ function App() {
     };
 
     const goToProductSite = () => {
-        if (selectedProduct) {
+        if (selectedProducts[selectedChain]) {
             const productURL = selectedChain === 'chain1'
-                ? `https://automercado.cr/p/bebida-gaseosa-zero-sabor-cereza-dr.pepper-lata-355-ml/id/${selectedProduct}`
-                : `https://www.pricesmart.com/es-CR/producto/members-selection-comida-para-perro-raza-pequena-sabor-avena-y-pollo-9-07-kg-20-lb/${selectedProduct}`;
+                ? `https://automercado.cr/p/bebida-gaseosa-zero-sabor-cereza-dr.pepper-lata-355-ml/id/${selectedProducts[selectedChain]}`
+                : `https://www.pricesmart.com/es-CR/producto/members-selection-comida-para-perro-raza-pequena-sabor-avena-y-pollo-9-07-kg-20-lb/${selectedProducts[selectedChain]}`;
             window.open(productURL, '_blank'); // Opens in a new tab
         }
     };
@@ -460,12 +483,18 @@ function App() {
             if (productIdToAdd && !productIds[selectedChain].includes(productIdToAdd)) {
                 setProductIds(prevProductIds => {
                     const updatedProductIds = { ...prevProductIds, [selectedChain]: [...prevProductIds[selectedChain], productIdToAdd] };
-                    setSelectedProduct(productIdToAdd); // Ensure the selected product is set
+                    setSelectedProducts(prevSelectedProducts => ({
+                        ...prevSelectedProducts,
+                        [selectedChain]: productIdToAdd
+                    }));
                     fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores);
                     return updatedProductIds;
                 });
             } else {
-                setSelectedProduct(productIdToAdd); // Ensure the selected product is set
+                setSelectedProducts(prevSelectedProducts => ({
+                    ...prevSelectedProducts,
+                    [selectedChain]: productIdToAdd
+                }));
             }
             setSearchInputValue(''); // Clear the search input value
         }
@@ -578,7 +607,7 @@ function App() {
 
                 <ProductList
                     products={products}
-                    selectedProduct={selectedProduct}
+                    selectedProduct={selectedProducts[selectedChain]}
                     handleProductChange={handleProductChange}
                     handleRemoveProduct={handleRemoveProduct}
                 />
