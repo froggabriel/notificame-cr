@@ -12,7 +12,8 @@ import {
     CardContent,
     Divider,
     IconButton,
-    Autocomplete // Added Autocomplete import
+    Autocomplete, // Added Autocomplete import
+    useMediaQuery // Add useMediaQuery import
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import StoreIcon from '@mui/icons-material/Store'; // Changed icon import
@@ -80,7 +81,10 @@ function App() {
     const PROXY_URL = process.env.NODE_ENV === 'production' 
         ? process.env.REACT_APP_PROXY_URL_PROD 
         : process.env.REACT_APP_PROXY_URL;
-    const RECOMMENDATIONS_PER_PAGE = 3;
+
+    const isSmallScreen = useMediaQuery('(max-width:600px)');
+    const isMediumScreen = useMediaQuery('(max-width:960px)');
+    const RECOMMENDATIONS_PER_PAGE = isSmallScreen ? 1 : isMediumScreen ? 2 : 3; // Adjust recommendations per page based on screen size
 
     const LOCAL_STORAGE_KEY = 'productIds';
 
