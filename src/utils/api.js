@@ -92,7 +92,9 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                             availableAnywhere: availableAnywhere
                         };
                     } else {
-                        console.warn('No hits found for the product.');
+                        if (process.env.NODE_ENV === 'development') {
+                            console.warn('No hits found for the product.');
+                        }
                         return null;
                     }
                 }).filter(product => product !== null);
@@ -126,7 +128,9 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
 
                 const productList = responses.map(response => {
                     const product = response.data.data.products.results[0];
-                    console.log('product:', product); // Add this line
+                    if (process.env.NODE_ENV === 'development') {
+                        console.log('product:', product); // Add this line
+                    }
                     if (product && product.masterData && product.masterData.current && product.masterData.current.masterVariant && product.masterData.current.masterVariant.availability && product.masterData.current.masterVariant.availability.channels && product.masterData.current.masterVariant.availability.channels.results) {
                         const storeDetail = {};
                         product.masterData.current.masterVariant.availability.channels.results.forEach(store => {
@@ -144,6 +148,10 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                         const availableAnywhere = showOnlyCRStores
                             ? costaRicaStoreIds.some(storeId => storeDetail[storeId] && storeDetail[storeId].hasInvontory === 1)
                             : Object.values(storeDetail).some(detail => detail.hasInvontory === 1);
+
+                        if (process.env.NODE_ENV === 'development') {
+                            console.log('availableAnywhere:', availableAnywhere); // Add this line
+                        }
 
                         return {
                             productId: product.masterData.current.masterVariant.sku,
@@ -237,7 +245,9 @@ export const fetchChain2SearchResults = async (query, setSearchResults, setError
                 'Content-Type': 'application/json'
             }
         });
-        console.log('fetchChain2SearchResults response:', response.data); // Add this line
+        if (process.env.NODE_ENV === 'development') {
+            console.log('fetchChain2SearchResults response:', response.data); // Add this line
+        }
         if (response.data && response.data.suggestionGroups && response.data.suggestionGroups.length > 0) {
             const searchSuggestions = response.data.suggestionGroups[0].searchSuggestions;
             if (Array.isArray(searchSuggestions)) {
@@ -246,7 +256,9 @@ export const fetchChain2SearchResults = async (query, setSearchResults, setError
                     text: suggestion.title,
                     image: suggestion.thumb_image
                 }));
-                console.log('searchSuggestions:', formattedSuggestions); // Add this line
+                if (process.env.NODE_ENV === 'development') {
+                    console.log('searchSuggestions:', formattedSuggestions); // Add this line
+                }
                 setSearchResults(formattedSuggestions);
             } else {
                 console.warn('searchSuggestions is not an array:', searchSuggestions);

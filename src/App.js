@@ -13,22 +13,14 @@ import {
     Divider,
     IconButton,
     Autocomplete, // Added Autocomplete import
-    useMediaQuery // Add useMediaQuery import
+    useMediaQuery, // Add useMediaQuery import
+    InputAdornment // Add InputAdornment import
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import StoreIcon from '@mui/icons-material/Store'; // Changed icon import
 import CodeIcon from '@mui/icons-material/Code';
 import MenuIcon from '@mui/icons-material/Menu';
-// Removed unused imports
-// import Button from '@mui/material/Button';
-// import Menu from '@mui/material/Menu';
-// import MenuItem as MuiMenuItem from '@mui/material/MenuItem';
-// import Brightness4Icon from '@mui/icons-material/Brightness4';
-// import Brightness7Icon from '@mui/icons-material/Brightness7';
-// import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-// import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import SearchIcon from '@mui/icons-material/Search'; // Add SearchIcon import
-import CloseIcon from '@mui/icons-material/Close'; // Add CloseIcon import
 import AddProductModal from './components/AddProductModal'; // Add AddProductModal import
 import AddIcon from '@mui/icons-material/Add'; // Add AddIcon import
 
@@ -74,7 +66,6 @@ function App() {
     const [searchResults, setSearchResults] = useState([]); // Added state for search results
     const [searchInputValue, setSearchInputValue] = useState(''); // Added state for search input value
     const debouncedSearchInputValue = useDebounce(searchInputValue, 100); // Add debounced search input value
-    const [isSearchOpen, setIsSearchOpen] = useState(false); // Add state for search bar visibility
     const searchInputRef = useRef(null); // Add reference for search input
     const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false); // Add state for modal visibility
 
@@ -496,7 +487,14 @@ function App() {
                             body: JSON.stringify(algoliaRequest)
                         });
                         const data = await response.json();
-                        setSearchResults(data.results[0].hits);
+                        const hits = data.results[0].hits.map(hit => ({
+                            ...hit,
+                            available: Object.values(hit.storeDetail).some(detail => detail.hasInvontory === 1)
+                        }));
+                        if (process.env.NODE_ENV === 'development') {
+                            console.log('Search results with availability:', hits); // Debugging statement
+                        }
+                        setSearchResults(hits);
                     } catch (error) {
                         console.error('Error fetching search results:', error);
                     }
@@ -535,7 +533,6 @@ function App() {
                 }));
             }
             setSearchInputValue(''); // Clear the search input value
-            setIsSearchOpen(false); // Close the search bar
         }
     };
 
@@ -547,15 +544,6 @@ function App() {
             return part;
         });
         return <span>{parts}</span>;
-    };
-
-    const handleSearchIconClick = () => {
-        setIsSearchOpen(prev => !prev);
-        if (!isSearchOpen) {
-            setTimeout(() => {
-                searchInputRef.current.focus(); // Focus the search input when it is opened
-            }, 0);
-        }
     };
 
     const handleOpenAddProductModal = () => {
@@ -571,45 +559,52 @@ function App() {
             <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                     <ChainSelector selectedChain={selectedChain} storeChains={storeChains} handleChainChange={handleChainChange} />
-                    <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, justifyContent: 'flex-end' }}>
-                        {isSearchOpen && (
-                            <Autocomplete
-                                freeSolo
-                                options={searchResults}
-                                getOptionLabel={(option) => selectedChain === 'chain2' ? option.text || '' : option.ecomDescription || ''}
-                                inputValue={searchInputValue} // Bind input value to state
-                                onInputChange={handleSearchChange}
-                                onChange={handleProductSelect}
-                                renderOption={(props, option, index) => {
-                                    const { key, ...rest } = props;
-                                    return (
-                                        <Box key={`${key}-${index}`} {...rest}>
-                                            <img
-                                                src={selectedChain === 'chain2' ? option.image : option.imageUrl}
-                                                alt={selectedChain === 'chain2' ? option.text : option.ecomDescription}
-                                                style={{ width: '80px', height: '80px', marginRight: '10px' }} // Increase image size
-                                            />
-                                            {renderHighlightedText(selectedChain === 'chain2' ? option.text : option._snippetResult.ecomDescription.value)}
-                                        </Box>
-                                    );
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Search Products"
-                                        variant="outlined"
-                                        size="small"
-                                        fullWidth
-                                        inputRef={searchInputRef} // Attach reference to the search input
-                                        sx={{ flexGrow: 1 }}
-                                    />
-                                )}
-                                sx={{ mr: 1, flexGrow: 1 }}
-                            />
-                        )}
-                        <IconButton onClick={handleSearchIconClick} color="inherit">
-                            {isSearchOpen ? <CloseIcon /> : <SearchIcon />}
-                        </IconButton>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, justifyContent: 'flex-end', ml: 2, mr: 1 }}>
+                        <Autocomplete
+                            freeSolo
+                            options={searchResults}
+                            getOptionLabel={(option) => selectedChain === 'chain2' ? option.text || '' : option.ecomDescription || ''}
+                            inputValue={searchInputValue} // Bind input value to state
+                            onInputChange={handleSearchChange}
+                            onChange={handleProductSelect}
+                            renderOption={(props, option, index) => {
+                                const { key, ...rest } = props;
+                                return (
+                                    <Box key={`${key}-${index}`} {...rest}>
+                                        <img
+                                            src={selectedChain === 'chain2' ? option.image : option.imageUrl}
+                                            alt={selectedChain === 'chain2' ? option.text : option.ecomDescription}
+                                            style={{ 
+                                                width: '80px', 
+                                                height: '80px', 
+                                                marginRight: '10px', 
+                                                filter: selectedChain === 'chain1' && !option.available ? 'grayscale(100%)' : 'none' // Apply grayscale filter only for chain1
+                                            }} // Increase image size
+                                        />
+                                        {renderHighlightedText(selectedChain === 'chain2' ? option.text : option._snippetResult.ecomDescription.value)}
+                                    </Box>
+                                );
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    variant="outlined"
+                                    size="small"
+                                    fullWidth
+                                    inputRef={searchInputRef} // Attach reference to the search input
+                                    sx={{ flexGrow: 1 }}
+                                    InputProps={{
+                                        ...params.InputProps,
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <SearchIcon />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                            )}
+                            sx={{ mr: 1, flexGrow: 1 }}
+                        />
                         <IconButton onClick={handleMenuOpen} color="inherit">
                             <MenuIcon />
                         </IconButton>

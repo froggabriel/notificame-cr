@@ -41,9 +41,10 @@ const ProductList = ({ products, selectedProduct, handleProductChange, handleRem
                 renderValue={(selected) => {
                     const selectedProductData = products.find(product => product.productId === selected);
                     return selectedProductData ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Avatar src={selectedProductData.imageUrl} sx={{ mr: 1, width: 24, height: 24 }} />
-                            {selectedProductData.name}
+                        <Box sx={{ display: 'flex', alignItems: 'center', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                            <Typography variant="body2">
+                                {selectedProductData.name}
+                            </Typography>
                         </Box>
                     ) : null;
                 }}
@@ -51,10 +52,15 @@ const ProductList = ({ products, selectedProduct, handleProductChange, handleRem
                 {products.map(product => (
                     <StyledMenuItem key={product.productId} value={product.productId} available={product.availableAnywhere.toString()}>
                         <ListItemAvatar>
-                            <Avatar src={product.imageUrl} />
+                            <Avatar src={product.imageUrl} sx={{ width: 80, height: 80, borderRadius: 0 }} /> {/* Increase image size and remove circle frame */}
                         </ListItemAvatar>
                         <ListItemText 
-                            primary={product.name} 
+                            sx={{ ml: 2 }}
+                            primary={
+                                <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                    {product.name}
+                                </Typography>
+                            } 
                             secondary={
                                 <Typography variant="body2" color="textSecondary">
                                     {formatPrice(product.storeDetail[Object.keys(product.storeDetail)[0]].basePrice)}
