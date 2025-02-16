@@ -41,6 +41,7 @@ import { fetchStores, fetchAllProductsAvailability, fetchRecommendedProducts, fe
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import ChainSelector from './components/ChainSelector';
 import AppMenu from './components/AppMenu';
+import useDebounce from './hooks/useDebounce'; // Add useDebounce import
 
 function App() {
     const { themeMode, toggleTheme } = useContext(ThemeContext);
@@ -70,6 +71,7 @@ function App() {
     const [showOnlyCRStores, setShowOnlyCRStores] = useState(true);
     const [searchResults, setSearchResults] = useState([]); // Added state for search results
     const [searchInputValue, setSearchInputValue] = useState(''); // Added state for search input value
+    const debouncedSearchInputValue = useDebounce(searchInputValue, 100); // Add debounced search input value
     const [isSearchOpen, setIsSearchOpen] = useState(false); // Add state for search bar visibility
     const searchInputRef = useRef(null); // Add reference for search input
 
@@ -452,40 +454,44 @@ function App() {
     };
 
     const handleSearchChange = async (event, value) => {
-        if (process.env.NODE_ENV === 'development') {
-            console.log('handleSearchChange value:', value);
-        }
         setSearchInputValue(value); // Update search input value
-        if (value) {
-            if (selectedChain === 'chain2') {
-                fetchChain2SearchResults(value, setSearchResults, setError);
-            } else {
-                try {
-                    const algoliaRequest = {
-                        requests: [
-                            {
-                                indexName: "Product_CatalogueV2",
-                                params: `query=${value}&hitsPerPage=10&userToken=feba0c89-3a8c-41e0-af46-a379bfd34569&enablePersonalization=true&facets=["marca","addedSugarFree","fiberSource","lactoseFree","lfGlutemFree","lfOrganic","lfVegan","lowFat","lowSodium","preservativeFree","sweetenersFree","parentProductid","parentProductid2","parentProductid_URL","catecom"]&facetFilters=[[]]`
-                            }
-                        ]
-                    };
-                    const response = await fetch(`${PROXY_URL}/am/availability`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(algoliaRequest)
-                    });
-                    const data = await response.json();
-                    setSearchResults(data.results[0].hits);
-                } catch (error) {
-                    console.error('Error fetching search results:', error);
-                }
-            }
-        } else {
-            setSearchResults([]);
-        }
     };
+
+    useEffect(() => {
+        const fetchSearchResults = async () => {
+            if (debouncedSearchInputValue) {
+                if (selectedChain === 'chain2') {
+                    fetchChain2SearchResults(debouncedSearchInputValue, setSearchResults, setError);
+                } else {
+                    try {
+                        const algoliaRequest = {
+                            requests: [
+                                {
+                                    indexName: "Product_CatalogueV2",
+                                    params: `query=${debouncedSearchInputValue}&hitsPerPage=10&userToken=feba0c89-3a8c-41e0-af46-a379bfd34569&enablePersonalization=true&facets=["marca","addedSugarFree","fiberSource","lactoseFree","lfGlutemFree","lfOrganic","lfVegan","lowFat","lowSodium","preservativeFree","sweetenersFree","parentProductid","parentProductid2","parentProductid_URL","catecom"]&facetFilters=[[]]`
+                                }
+                            ]
+                        };
+                        const response = await fetch(`${PROXY_URL}/am/availability`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(algoliaRequest)
+                        });
+                        const data = await response.json();
+                        setSearchResults(data.results[0].hits);
+                    } catch (error) {
+                        console.error('Error fetching search results:', error);
+                    }
+                }
+            } else {
+                setSearchResults([]);
+            }
+        };
+
+        fetchSearchResults();
+    }, [debouncedSearchInputValue, selectedChain, PROXY_URL]);
 
     const handleProductSelect = (event, value) => {
         if (process.env.NODE_ENV === 'development') {
