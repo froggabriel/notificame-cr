@@ -531,6 +531,7 @@ function App() {
                 }));
             }
             setSearchInputValue(''); // Clear the search input value
+            setIsSearchOpen(false); // Close the search bar
         }
     };
 

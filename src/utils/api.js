@@ -47,7 +47,7 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
     setAvailability({});
     setIsProductAvailable(false);
 
-    const costaRicaStoreNames = ['Llorente', 'Escazú', 'Alajuela', 'Cartago', 'Zapote', 'Heredia', 'Tres Ríos', 'Liberia'];
+    const costaRicaStoreNames = ['Llorente', 'Escazú', 'Alajuela', 'Cartago', 'Zapote', 'Heredia', 'Tres Ríos', 'Liberia', 'Santa Ana']; // Add Santa Ana
     const costaRicaStoreIds = stores
         .filter(store => costaRicaStoreNames.includes(store.name))
         .map(store => store.storeId);
