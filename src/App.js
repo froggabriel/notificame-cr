@@ -148,6 +148,12 @@ function App() {
 
     useEffect(() => {
         serviceWorkerRegistration.register();
+
+        window.addEventListener('beforeinstallprompt', (event) => {
+            event.preventDefault();
+            window.deferredPrompt = event;
+            console.log('beforeinstallprompt event fired');
+        });
     }, []);
 
     const requestNotificationPermission = async () => {
@@ -725,7 +731,6 @@ function App() {
                 setNewProductId={setNewProductId}
                 handleAddProduct={handleAddProduct}
             />
-            <a href="https://www.flaticon.com/free-icons/groceries" title="groceries icons">Groceries icons created by Uniconlabs - Flaticon</a>
         </Container>
     );
 }
