@@ -15,24 +15,36 @@ const style = {
 
 const NotificationSettingsModal = ({ open, handleClose, notificationSettings, setNotificationSettings }) => {
   const [interval, setInterval] = useState(notificationSettings.interval);
-  const [selectedStores, setSelectedStores] = useState(notificationSettings.selectedStores);
+  const [selectedStores, setSelectedStores] = useState(notificationSettings.selectedStores || { chain1: [], chain2: [] });
 
   useEffect(() => {
-    setInterval(notificationSettings.interval);
-    setSelectedStores(notificationSettings.selectedStores);
-  }, [notificationSettings]);
+    if (open) {
+      console.log('Modal opened. Updating state with notificationSettings:', notificationSettings);
+      setInterval(notificationSettings.interval);
+      setSelectedStores(notificationSettings.selectedStores || { chain1: [], chain2: [] });
+    }
+  }, [open, notificationSettings]);
 
   const handleSave = () => {
-    setNotificationSettings({ interval, selectedStores });
+    const updatedSelectedStores = {
+      chain1: selectedStores.chain1 || [],
+      chain2: selectedStores.chain2 || []
+    };
+    console.log('Saving settings with interval:', interval, 'and selectedStores:', updatedSelectedStores);
+    setNotificationSettings({ interval, selectedStores: updatedSelectedStores, allStores: notificationSettings.allStores });
     handleClose();
   };
 
   const handleStoreChange = (chainId, newValue) => {
+    console.log('Store selection changed for', chainId, 'to', newValue);
     setSelectedStores((prevSelectedStores) => ({
       ...prevSelectedStores,
       [chainId]: newValue
     }));
   };
+
+  const allStores = notificationSettings.allStores || { chain1: [], chain2: [] };
+  console.log('Rendering modal with allStores:', allStores, 'and selectedStores:', selectedStores);
 
   return (
     <Modal open={open} onClose={handleClose}>
@@ -53,12 +65,12 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
           onChange={(e) => setInterval(e.target.value)}
           sx={{ mb: 2 }}
         />
-        {Object.keys(notificationSettings.allStores).map((chainId) => (
+        {Object.keys(allStores).map((chainId) => (
           <Box key={chainId} sx={{ mb: 2 }}>
             <h3>Select Stores for {chainId === 'chain1' ? 'Auto Mercado' : 'PriceSmart'}</h3>
             <Autocomplete
               multiple
-              options={notificationSettings.allStores[chainId]}
+              options={allStores[chainId]}
               getOptionLabel={(option) => option.name}
               value={selectedStores[chainId] || []}
               onChange={(event, newValue) => handleStoreChange(chainId, newValue)}

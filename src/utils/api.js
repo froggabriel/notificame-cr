@@ -4,16 +4,15 @@ const PROXY_URL = process.env.NODE_ENV === 'production'
     ? process.env.REACT_APP_PROXY_URL_PROD 
     : process.env.REACT_APP_PROXY_URL;
 
-export const fetchStores = async (chainId, setStores, setError) => {
+export const fetchStores = async (chainId, setError) => {
     try {
         if (chainId === 'chain1') {
             const response = await axios.get(`${PROXY_URL}/am/stores?chainId=${chainId}`);
             const storeData = response.data.data;
-            const formattedStores = storeData.map(store => ({
+            return storeData.map(store => ({
                 storeId: store.storeid,
                 name: store.store
             }));
-            setStores(formattedStores);
         } else if (chainId === 'chain2') {
             const response = await axios.post(`${PROXY_URL}/ps/availability`, [
                 { skus: ["755713"] },
@@ -26,18 +25,19 @@ export const fetchStores = async (chainId, setStores, setError) => {
             const product = response.data.data.products.results[0];
             if (product && product.masterData && product.masterData.current && product.masterData.current.masterVariant && product.masterData.current.masterVariant.availability && product.masterData.current.masterVariant.availability.channels && product.masterData.current.masterVariant.availability.channels.results) {
                 const storeData = product.masterData.current.masterVariant.availability.channels.results;
-                const formattedStores = storeData.map(store => ({
+                return storeData.map(store => ({
                     storeId: store.channel.id,
                     name: store.channel.nameAllLocales[0].value
                 }));
-                setStores(formattedStores);
             } else {
                 setError('Error fetching stores. Please try again.');
+                return [];
             }
         }
     } catch (error) {
         console.error('Error fetching stores:', error);
         setError('Error fetching stores. Please try again.');
+        return [];
     }
 };
 

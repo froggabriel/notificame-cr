@@ -45,7 +45,7 @@ function App() {
         { id: 'chain2', name: 'PriceSmart', image: 'https://pricesmart.bloomreach.io/delivery/resources/content/gallery/pricesmart/header/logomobile.svg' }
     ]);
     const [selectedChain, setSelectedChain] = useState(localStorage.getItem('selectedChain') || 'chain1');
-    const [stores, setStores] = useState([]);
+    const [stores, setStores] = useState({ chain1: [], chain2: [] });
     const [selectedProducts, setSelectedProducts] = useState(JSON.parse(localStorage.getItem('selectedProducts')) || { chain1: '', chain2: '' });
     const [productName, setProductName] = useState('');
     const [productImage, setProductImage] = useState('');
@@ -140,14 +140,31 @@ function App() {
     }, [showOnlyCRStores]);
 
     useEffect(() => {
-        if (selectedChain) {
-            fetchStores(selectedChain, setStores, setError, PROXY_URL);
-        }
-    }, [selectedChain, PROXY_URL]);
+        const fetchAllStores = async () => {
+            try {
+                const chain1Stores = await fetchStores('chain1', setError, PROXY_URL);
+                const chain2Stores = await fetchStores('chain2', setError, PROXY_URL);
+                setStores({ chain1: chain1Stores, chain2: chain2Stores });
+                setNotificationSettings((prevSettings) => ({
+                    ...prevSettings,
+                    allStores: {
+                        chain1: chain1Stores,
+                        chain2: chain2Stores
+                    }
+                }));
+                console.log('Fetched stores:', { chain1: chain1Stores, chain2: chain2Stores });
+            } catch (error) {
+                console.error('Error fetching stores:', error);
+                setError('Error fetching stores. Please try again.');
+            }
+        };
+
+        fetchAllStores();
+    }, [PROXY_URL]);
 
     useEffect(() => {
-        if (stores.length > 0 && productIds[selectedChain].length > 0) {
-            fetchAllProductsAvailability(selectedChain, productIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores);
+        if (stores[selectedChain].length > 0 && productIds[selectedChain].length > 0) {
+            fetchAllProductsAvailability(selectedChain, productIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores[selectedChain]);
         }
     }, [stores, productIds, selectedChain, PROXY_URL, showOnlyCRStores]);
 
@@ -202,7 +219,7 @@ function App() {
 
     const checkProductAvailability = useCallback(() => {
         if (selectedProducts[selectedChain]) {
-            fetchAllProductsAvailability(selectedChain, [selectedProducts[selectedChain]], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores)
+            fetchAllProductsAvailability(selectedChain, [selectedProducts[selectedChain]], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores[selectedChain])
                 .then(() => {
                     if (isProductAvailable) {
                         sendNotification('Product Available', {
@@ -226,7 +243,7 @@ function App() {
         const storeAvailability = {};
         let productAvailableAnywhereVar = false;
 
-        stores.forEach(store => {
+        stores[selectedChain].forEach(store => {
             const storeId = store.storeId;
             const detail = storeDetail ? storeDetail[storeId] : null;
 
@@ -271,7 +288,7 @@ function App() {
                 icon: productImage
             });
         }
-    }, [stores, productName, productImage]);
+    }, [stores, selectedChain, productName, productImage]);
 
     const handleProductChange = (event) => {
         const newProductId = event.target.value;
@@ -285,7 +302,6 @@ function App() {
         const newChainId = event.target.value;
         if (newChainId !== selectedChain) {
             setSelectedChain(newChainId);
-            setStores([]);
             setProducts([]);
             setSelectedProducts(prevSelectedProducts => ({
                 ...prevSelectedProducts,
@@ -352,7 +368,7 @@ function App() {
                     ...prevSelectedProducts,
                     [selectedChain]: productIdToAdd
                 }));
-                fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores);
+                fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores[selectedChain]);
                 return updatedProductIds;
             });
         }
@@ -390,7 +406,7 @@ function App() {
         const availableStores = [];
         const unavailableStores = [];
 
-        stores.forEach(store => {
+        stores[selectedChain].forEach(store => {
             if (availability[store.storeId] && availability[store.storeId].hasInventory === 1) {
                 availableStores.push(store);
             } else {
@@ -470,7 +486,7 @@ function App() {
 
     const displayedRecommendations = recommendedProducts.slice(recommendationStartIndex, recommendationStartIndex + RECOMMENDATIONS_PER_PAGE);
 
-    const storeDetails = stores.map(store => ({
+    const storeDetails = stores[selectedChain].map(store => ({
         ...store,
         ...availability[store.storeId]
     }));
@@ -550,7 +566,7 @@ function App() {
                         ...prevSelectedProducts,
                         [selectedChain]: productIdToAdd
                     }));
-                    fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores);
+                    fetchAllProductsAvailability(selectedChain, updatedProductIds[selectedChain], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores[selectedChain]);
                     return updatedProductIds;
                 });
             } else {
@@ -604,6 +620,10 @@ function App() {
     useEffect(() => {
         localStorage.setItem('notificationInterval', notificationSettings.interval);
         localStorage.setItem('selectedStores', JSON.stringify(notificationSettings.selectedStores));
+    }, [notificationSettings]);
+
+    useEffect(() => {
+        console.log('Updated notificationSettings:', notificationSettings);
     }, [notificationSettings]);
 
     return (
