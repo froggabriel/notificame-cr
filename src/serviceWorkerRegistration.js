@@ -7,7 +7,7 @@ const isLocalhost = Boolean(
 );
 
 export function register(config) {
-  if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+  if ('serviceWorker' in navigator) {
     const publicUrl = new URL(process.env.PUBLIC_URL, window.location.href);
     if (publicUrl.origin !== window.location.origin) {
       return;
@@ -44,6 +44,14 @@ export function register(config) {
         // Send subscription to the server
       }).catch(error => {
         console.error('Push subscription error:', error);
+      });
+
+      // Set PROXY_URL in the service worker
+      registration.active.postMessage({
+        type: 'SET_PROXY_URL',
+        proxyUrl: process.env.NODE_ENV === 'production' 
+          ? process.env.REACT_APP_PROXY_URL_PROD 
+          : process.env.REACT_APP_PROXY_URL
       });
     });
   }

@@ -23,6 +23,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search'; // Add SearchIcon import
 import AddProductModal from './components/AddProductModal'; // Add AddProductModal import
 import AddIcon from '@mui/icons-material/Add'; // Add AddIcon import
+import NotificationSettingsModal from './components/NotificationSettingsModal'; // Add NotificationSettingsModal import
 
 import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
 import { JsonButton, ButtonContainer } from './components/StyledComponents';
@@ -62,12 +63,18 @@ function App() {
     const [copySuccess, setCopySuccess] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [showOnlyCRStores, setShowOnlyCRStores] = useState(true);
+    const [showOnlyCRStores, setShowOnlyCRStores] = useState(localStorage.getItem('showOnlyCRStores') === 'true');
     const [searchResults, setSearchResults] = useState([]); // Added state for search results
     const [searchInputValue, setSearchInputValue] = useState(''); // Added state for search input value
     const debouncedSearchInputValue = useDebounce(searchInputValue, 100); // Add debounced search input value
     const searchInputRef = useRef(null); // Add reference for search input
     const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false); // Add state for modal visibility
+    const [notificationSettings, setNotificationSettings] = useState({
+        interval: localStorage.getItem('notificationInterval') || 60,
+        selectedStores: JSON.parse(localStorage.getItem('selectedStores')) || { chain1: [], chain2: [] },
+        allStores: { chain1: [], chain2: [] }
+    });
+    const [isNotificationSettingsModalOpen, setIsNotificationSettingsModalOpen] = useState(false);
 
     const PROXY_URL = process.env.NODE_ENV === 'production' 
         ? process.env.REACT_APP_PROXY_URL_PROD 
@@ -129,6 +136,10 @@ function App() {
     }, [selectedProducts]);
 
     useEffect(() => {
+        localStorage.setItem('showOnlyCRStores', showOnlyCRStores);
+    }, [showOnlyCRStores]);
+
+    useEffect(() => {
         if (selectedChain) {
             fetchStores(selectedChain, setStores, setError, PROXY_URL);
         }
@@ -154,7 +165,17 @@ function App() {
             window.deferredPrompt = event;
             console.log('beforeinstallprompt event fired');
         });
-    }, []);
+
+        if ('serviceWorker' in navigator && 'PeriodicSyncManager' in window) {
+            navigator.serviceWorker.ready.then((registration) => {
+                registration.periodicSync.register('check-product-availability', {
+                    minInterval: notificationSettings.interval * 60 * 1000 // Convert minutes to milliseconds
+                }).catch((error) => {
+                    console.error('Error registering periodic sync:', error);
+                });
+            });
+        }
+    }, [notificationSettings.interval]);
 
     const requestNotificationPermission = async () => {
         if ('Notification' in window && navigator.serviceWorker) {
@@ -560,6 +581,31 @@ function App() {
         setIsAddProductModalOpen(false);
     };
 
+    const handleOpenNotificationSettings = () => {
+        setIsNotificationSettingsModalOpen(true);
+    };
+
+    const handleCloseNotificationSettings = () => {
+        setIsNotificationSettingsModalOpen(false);
+    };
+
+    useEffect(() => {
+        if (stores.length > 0) {
+            setNotificationSettings((prevSettings) => ({
+                ...prevSettings,
+                allStores: {
+                    ...prevSettings.allStores,
+                    [selectedChain]: stores
+                }
+            }));
+        }
+    }, [stores, selectedChain]);
+
+    useEffect(() => {
+        localStorage.setItem('notificationInterval', notificationSettings.interval);
+        localStorage.setItem('selectedStores', JSON.stringify(notificationSettings.selectedStores));
+    }, [notificationSettings]);
+
     return (
         <Container maxWidth="md">
             <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -615,7 +661,7 @@ function App() {
                             <MenuIcon />
                         </IconButton>
                     </Box>
-                    <AppMenu anchorEl={anchorEl} handleMenuClose={handleMenuClose} toggleTheme={toggleTheme} themeMode={themeMode} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} toggleShowOnlyCRStores={toggleShowOnlyCRStores} showOnlyCRStores={showOnlyCRStores} />
+                    <AppMenu anchorEl={anchorEl} handleMenuClose={handleMenuClose} toggleTheme={toggleTheme} themeMode={themeMode} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} toggleShowOnlyCRStores={toggleShowOnlyCRStores} showOnlyCRStores={showOnlyCRStores} handleOpenNotificationSettings={handleOpenNotificationSettings} />
                 </Box>
                 {error && (
                     <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
@@ -730,6 +776,12 @@ function App() {
                 newProductId={newProductId}
                 setNewProductId={setNewProductId}
                 handleAddProduct={handleAddProduct}
+            />
+            <NotificationSettingsModal
+                open={isNotificationSettingsModalOpen}
+                handleClose={handleCloseNotificationSettings}
+                notificationSettings={notificationSettings}
+                setNotificationSettings={setNotificationSettings}
             />
         </Container>
     );

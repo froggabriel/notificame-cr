@@ -3,7 +3,7 @@ import { Menu, MenuItem, Typography, Switch, FormControlLabel } from '@mui/mater
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 
-const AppMenu = ({ anchorEl, handleMenuClose, toggleTheme, themeMode, isMenuOpen, setIsMenuOpen, toggleShowOnlyCRStores, showOnlyCRStores }) => {
+const AppMenu = ({ anchorEl, handleMenuClose, toggleTheme, themeMode, isMenuOpen, setIsMenuOpen, toggleShowOnlyCRStores, showOnlyCRStores, handleOpenNotificationSettings }) => {
     return (
         <Menu
             anchorEl={anchorEl}
@@ -19,6 +19,9 @@ const AppMenu = ({ anchorEl, handleMenuClose, toggleTheme, themeMode, isMenuOpen
                     control={<Switch checked={showOnlyCRStores} onChange={toggleShowOnlyCRStores} />}
                     label="Show only stores in Costa Rica"
                 />
+            </MenuItem>
+            <MenuItem onClick={handleOpenNotificationSettings}>
+                <Typography>Notification Settings</Typography>
             </MenuItem>
         </Menu>
     );
