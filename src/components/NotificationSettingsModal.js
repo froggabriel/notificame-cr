@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Box, TextField, Button, IconButton, Chip, Autocomplete } from '@mui/material';
+import { Modal, Box, TextField, Button, IconButton, Chip, Autocomplete, Grid, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import NotificationsIcon from '@mui/icons-material/Notifications'; // Import NotificationsIcon
 
@@ -24,13 +24,15 @@ const defaultAutoMercadoStores = [
 const costaRicaStoreNames = ['Llorente', 'Escazú', 'Alajuela', 'Cartago', 'Zapote', 'Heredia', 'Tres Ríos', 'Liberia', 'Santa Ana'];
 
 const NotificationSettingsModal = ({ open, handleClose, notificationSettings, setNotificationSettings }) => {
-  const [interval, setInterval] = useState(notificationSettings.interval);
+  const [unit, setUnit] = useState('minutes');
+  const [value, setValue] = useState(notificationSettings.interval);
   const [selectedStores, setSelectedStores] = useState(notificationSettings.selectedStores || { chain1: [], chain2: [] });
 
   useEffect(() => {
     if (open) {
       console.log('Modal opened. Updating state with notificationSettings:', notificationSettings);
-      setInterval(notificationSettings.interval);
+      setUnit('minutes');
+      setValue(notificationSettings.interval);
       setSelectedStores(notificationSettings.selectedStores || { chain1: [], chain2: [] });
 
       // Set default stores for Auto Mercado if not already set
@@ -45,6 +47,19 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
   }, [open, notificationSettings]);
 
   const handleSave = () => {
+    let interval;
+    switch (unit) {
+      case 'days':
+        interval = value * 1440;
+        break;
+      case 'hours':
+        interval = value * 60;
+        break;
+      case 'minutes':
+      default:
+        interval = value;
+        break;
+    }
     const updatedSelectedStores = {
       chain1: selectedStores.chain1.sort((a, b) => a.name.localeCompare(b.name)) || [],
       chain2: selectedStores.chain2.sort((a, b) => a.name.localeCompare(b.name)) || []
@@ -93,14 +108,22 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
             <CloseIcon />
           </IconButton>
         </Box>
+        <FormControl component="fieldset" sx={{ mb: 2 }}>
+          <FormLabel component="legend">Notification Interval</FormLabel>
+          <RadioGroup row value={unit} onChange={(e) => setUnit(e.target.value)}>
+            <FormControlLabel value="days" control={<Radio />} label="Days" />
+            <FormControlLabel value="hours" control={<Radio />} label="Hours" />
+            <FormControlLabel value="minutes" control={<Radio />} label="Minutes" />
+          </RadioGroup>
+        </FormControl>
         <TextField
-          label="Notification Interval (minutes)"
+          label={`Interval in ${unit}`}
           variant="outlined"
           size="small"
           fullWidth
           type="number"
-          value={interval}
-          onChange={(e) => setInterval(e.target.value)}
+          value={value}
+          onChange={(e) => setValue(parseInt(e.target.value, 10))}
           sx={{ mb: 2 }}
         />
         {Object.keys(availableStores).map((chainId) => (
