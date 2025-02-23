@@ -38,6 +38,8 @@ import ChainSelector from './components/ChainSelector';
 import AppMenu from './components/AppMenu';
 import useDebounce from './hooks/useDebounce'; // Add useDebounce import
 
+const costaRicaStoreNames = ['Llorente', 'Escazú', 'Alajuela', 'Cartago', 'Zapote', 'Heredia', 'Tres Ríos', 'Liberia', 'Santa Ana'];
+
 function App() {
     const { themeMode, toggleTheme } = useContext(ThemeContext);
     const [storeChains] = useState([
@@ -481,7 +483,7 @@ function App() {
     const sortedStores = sortStoresByAvailability();
 
     const displayedStores = selectedChain === 'chain2' && showOnlyCRStores
-        ? sortedStores.filter(store => ['Llorente', 'Escazú', 'Alajuela', 'Cartago', 'Zapote', 'Heredia', 'Tres Ríos', 'Liberia'].includes(store.name))
+        ? sortedStores.filter(store => costaRicaStoreNames.includes(store.name))
         : sortedStores;
 
     const displayedRecommendations = recommendedProducts.slice(recommendationStartIndex, recommendationStartIndex + RECOMMENDATIONS_PER_PAGE);
@@ -634,7 +636,15 @@ function App() {
                     <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, justifyContent: 'flex-end', ml: 2, mr: 1 }}>
                         <Autocomplete
                             freeSolo
-                            options={searchResults}
+                            options={searchResults.sort((a, b) => {
+                                const nameA = selectedChain === 'chain2' ? a.text : a.ecomDescription;
+                                const nameB = selectedChain === 'chain2' ? b.text : b.ecomDescription;
+                                const isCostaRicaA = costaRicaStoreNames.some(name => a.text.includes(name));
+                                const isCostaRicaB = costaRicaStoreNames.some(name => b.text.includes(name));
+                                if (isCostaRicaA && !isCostaRicaB) return -1;
+                                if (!isCostaRicaA && isCostaRicaB) return 1;
+                                return nameA.localeCompare(nameB);
+                            })}
                             getOptionLabel={(option) => selectedChain === 'chain2' ? option.text || '' : option.ecomDescription || ''}
                             inputValue={searchInputValue} // Bind input value to state
                             onInputChange={handleSearchChange}
