@@ -3,8 +3,7 @@ const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
+  '/favicon.svg'
   // Add other assets you want to cache
 ];
 
@@ -51,12 +50,4 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, options)
   );
-});
-
-// Add listener for beforeinstallprompt event
-self.addEventListener('beforeinstallprompt', (event) => {
-  event.preventDefault();
-  window.deferredPrompt = event;
-  // Optionally, show a custom install prompt UI
-  console.log('beforeinstallprompt event fired');
 });
