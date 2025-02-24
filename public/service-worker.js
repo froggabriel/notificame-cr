@@ -42,16 +42,20 @@ self.addEventListener('activate', (event) => {
     })
   );
 
-  // Register periodic sync
-  event.waitUntil(
-    self.registration.periodicSync.register('check-product-availability', {
-      minInterval: 60 * 1000 // 1 minute
-    }).then(() => {
-      console.log('Periodic sync registered');
-    }).catch((error) => {
-      console.error('Error registering periodic sync:', error);
-    })
-  );
+  // Register periodic sync if supported
+  if ('periodicSync' in self.registration) {
+    event.waitUntil(
+      self.registration.periodicSync.register('check-product-availability', {
+        minInterval: 60 * 1000 // 1 minute
+      }).then(() => {
+        console.log('Periodic sync registered');
+      }).catch((error) => {
+        console.error('Error registering periodic sync:', error);
+      })
+    );
+  } else {
+    console.warn('Periodic sync is not supported');
+  }
 });
 
 self.addEventListener('push', (event) => {
@@ -75,6 +79,7 @@ self.addEventListener('periodicsync', (event) => {
 });
 
 self.addEventListener('message', (event) => {
+  console.log('Service worker received message:', event.data); // Add logging
   if (event.data && event.data.type === 'SET_PROXY_URL') {
     self.PROXY_URL = event.data.proxyUrl;
     console.log('PROXY_URL set to:', self.PROXY_URL);
@@ -83,9 +88,14 @@ self.addEventListener('message', (event) => {
     console.log('Notification settings updated:', self.notificationSettings);
     updatePeriodicSync();
   } else if (event.data && event.data.type === 'TEST_NOTIFICATION') {
+    console.log('Test notification triggered'); // Add logging
     self.registration.showNotification('Test Notification', {
       body: 'This is a test notification.',
       icon: '/favicon.svg'
+    }).then(() => {
+      console.log('Test notification displayed'); // Add logging
+    }).catch((error) => {
+      console.error('Error displaying test notification:', error); // Add logging
     });
   }
 });

@@ -35,7 +35,9 @@ export const fetchStores = async (chainId, setError) => {
             }
         }
     } catch (error) {
-        console.error('Error fetching stores:', error);
+        if (process.env.NODE_ENV === 'development') {
+            console.error('Error fetching stores:', error);
+        }
         setError('Error fetching stores. Please try again.');
         return [];
     }
@@ -109,7 +111,9 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
             .catch(error => {
                 setLoading(false);
                 setError('Error fetching product availability. Please try again.');
-                console.error('Error checking availability:', error);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Error checking availability:', error);
+                }
             });
     } else if (selectedChain === 'chain2') {
         Promise.all(productIds.map(productId => {
@@ -162,7 +166,9 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
                             basePrice: product.masterData.current.masterVariant.price.value.centAmount / 100
                         };
                     } else {
-                        console.warn('No product found.');
+                        if (process.env.NODE_ENV === 'development') {
+                            console.warn('No product found.');
+                        }
                         return null;
                     }
                 }).filter(product => product !== null);
@@ -172,7 +178,9 @@ export const fetchAllProductsAvailability = (selectedChain, productIds, setProdu
             .catch(error => {
                 setLoading(false);
                 setError('Error fetching product availability. Please try again.');
-                console.error('Error checking availability:', error);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Error checking availability:', error);
+                }
             });
     }
 };
@@ -217,11 +225,15 @@ export const fetchRecommendedProducts = async (productId, productIds, setRecomme
             setRecommendedProducts(filteredRecommendations);
             setRecommendationStartIndex(0);
         } else {
-            console.warn("No recommendations found.");
+            if (process.env.NODE_ENV === 'development') {
+                console.warn("No recommendations found.");
+            }
             setRecommendedProducts([]);
         }
     } catch (error) {
-        console.error("Error fetching recommendations:", error);
+        if (process.env.NODE_ENV === 'development') {
+            console.error("Error fetching recommendations:", error);
+        }
         setError("Error fetching recommended products.");
         setRecommendedProducts([]);
     }
@@ -261,15 +273,21 @@ export const fetchChain2SearchResults = async (query, setSearchResults, setError
                 }
                 setSearchResults(formattedSuggestions);
             } else {
-                console.warn('searchSuggestions is not an array:', searchSuggestions);
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn('searchSuggestions is not an array:', searchSuggestions);
+                }
                 setSearchResults([]);
             }
         } else {
-            console.warn('No suggestionGroups or searchSuggestions found in response:', response.data);
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('No suggestionGroups or searchSuggestions found in response:', response.data);
+            }
             setSearchResults([]);
         }
     } catch (error) {
-        console.error("Error fetching search results:", error);
+        if (process.env.NODE_ENV === 'development') {
+            console.error("Error fetching search results:", error);
+        }
         setError("Error fetching search results.");
     }
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Box, TextField, IconButton, Chip, Autocomplete, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Switch } from '@mui/material';
+import { Modal, Box, TextField, IconButton, Chip, Autocomplete, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Switch, Snackbar, Alert } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import NotificationsIcon from '@mui/icons-material/Notifications'; // Import NotificationsIcon
 import SaveIcon from '@mui/icons-material/Save'; // Import SaveIcon
@@ -31,10 +31,14 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
   const [value, setValue] = useState(notificationSettings.interval);
   const [selectedStores, setSelectedStores] = useState(notificationSettings.selectedStores || { chain1: [], chain2: [] });
   const [notificationPermission, setNotificationPermission] = useState(Notification.permission); // Add state for notification permission
+  const [snackbarOpen, setSnackbarOpen] = useState(false); // Add state for Snackbar
+  const [snackbarMessage, setSnackbarMessage] = useState(''); // Add state for Snackbar message
 
   useEffect(() => {
     if (open) {
-      console.log('Modal opened. Updating state with notificationSettings:', notificationSettings);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Modal opened. Updating state with notificationSettings:', notificationSettings);
+      }
       setNotificationsEnabled(notificationSettings.notificationsEnabled || false);
       setUnit('minutes');
       setValue(notificationSettings.interval);
@@ -69,7 +73,9 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
       chain1: selectedStores.chain1.sort((a, b) => a.name.localeCompare(b.name)) || [],
       chain2: selectedStores.chain2.sort((a, b) => a.name.localeCompare(b.name)) || []
     };
-    console.log('Saving settings with interval:', interval, 'and selectedStores:', updatedSelectedStores);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Saving settings with interval:', interval, 'and selectedStores:', updatedSelectedStores);
+    }
     const newSettings = { notificationsEnabled, interval, selectedStores: updatedSelectedStores, allStores: notificationSettings.allStores };
     setNotificationSettings(newSettings);
 
@@ -91,7 +97,9 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
   };
 
   const handleStoreChange = (chainId, newValue) => {
-    console.log('Store selection changed for', chainId, 'to', newValue);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Store selection changed for', chainId, 'to', newValue);
+    }
     setSelectedStores((prevSelectedStores) => ({
       ...prevSelectedStores,
       [chainId]: newValue.sort((a, b) => a.name.localeCompare(b.name))
@@ -99,6 +107,9 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
   };
 
   const handleTestNotification = () => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Sending test notification'); // Add logging
+    }
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
         type: 'TEST_NOTIFICATION'
@@ -115,6 +126,8 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
       } else {
         setNotificationsEnabled(false);
         setNotificationPermission(permission);
+        setSnackbarMessage('Notification permission denied.');
+        setSnackbarOpen(true);
       }
     } else {
       setNotificationsEnabled(event.target.checked);
@@ -153,7 +166,7 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
           </IconButton>
         </Box>
         <FormControlLabel
-          control={<Switch checked={notificationsEnabled} onChange={handleNotificationSwitchChange} />}
+          control={<Switch checked={notificationsEnabled} onChange={handleNotificationSwitchChange} disabled={notificationPermission !== 'granted'} />}
           label="Enable Notifications"
           sx={{ mb: 2 }}
         />
@@ -220,6 +233,16 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
         <ElegantButton variant="outlined" onClick={handleSave} fullWidth startIcon={<SaveIcon />}>
           Save
         </ElegantButton>
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setSnackbarOpen(false)} severity="error" sx={{ width: '100%' }}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
       </Box>
     </Modal>
   );
