@@ -14,7 +14,8 @@ import {
     IconButton,
     Autocomplete, // Added Autocomplete import
     useMediaQuery, // Add useMediaQuery import
-    InputAdornment // Add InputAdornment import
+    InputAdornment, // Add InputAdornment import
+    Snackbar // Add Snackbar import
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import StoreIcon from '@mui/icons-material/Store'; // Changed icon import
@@ -24,6 +25,7 @@ import SearchIcon from '@mui/icons-material/Search'; // Add SearchIcon import
 import AddProductModal from './components/AddProductModal'; // Add AddProductModal import
 import AddIcon from '@mui/icons-material/Add'; // Add AddIcon import
 import NotificationSettingsModal from './components/NotificationSettingsModal'; // Add NotificationSettingsModal import
+import { Alert as MuiAlert } from '@mui/material'; // Add Alert import for Snackbar
 
 import ThemeProviderWrapper, { ThemeContext } from "./ThemeContext";
 import { JsonButton, ButtonContainer } from './components/StyledComponents';
@@ -71,12 +73,17 @@ function App() {
     const debouncedSearchInputValue = useDebounce(searchInputValue, 100); // Add debounced search input value
     const searchInputRef = useRef(null); // Add reference for search input
     const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false); // Add state for modal visibility
-    const [notificationSettings, setNotificationSettings] = useState({
-        interval: localStorage.getItem('notificationInterval') || 60,
-        selectedStores: JSON.parse(localStorage.getItem('selectedStores')) || { chain1: [], chain2: [] },
-        allStores: { chain1: [], chain2: [] }
+    const [notificationSettings, setNotificationSettings] = useState(() => {
+        const savedSettings = localStorage.getItem('notificationSettings');
+        return savedSettings ? JSON.parse(savedSettings) : {
+            notificationsEnabled: false,
+            interval: 60,
+            selectedStores: { chain1: [], chain2: [] },
+            allStores: { chain1: [], chain2: [] }
+        };
     });
     const [isNotificationSettingsModalOpen, setIsNotificationSettingsModalOpen] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false); // Add state for Snackbar
 
     const PROXY_URL = process.env.NODE_ENV === 'production' 
         ? process.env.REACT_APP_PROXY_URL_PROD 
@@ -812,7 +819,20 @@ function App() {
                 handleClose={handleCloseNotificationSettings}
                 notificationSettings={notificationSettings}
                 setNotificationSettings={setNotificationSettings}
+                snackbarOpen={snackbarOpen} // Pass snackbarOpen prop
+                setSnackbarOpen={setSnackbarOpen} // Pass setSnackbarOpen prop
+                onSave={() => setSnackbarOpen(true)} // Pass onSave prop
             />
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={() => setSnackbarOpen(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <MuiAlert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%' }}>
+                    Notification settings saved successfully!
+                </MuiAlert>
+            </Snackbar>
         </Container>
     );
 }

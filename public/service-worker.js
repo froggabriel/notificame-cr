@@ -78,6 +78,15 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SET_PROXY_URL') {
     self.PROXY_URL = event.data.proxyUrl;
     console.log('PROXY_URL set to:', self.PROXY_URL);
+  } else if (event.data && event.data.type === 'SET_NOTIFICATION_SETTINGS') {
+    self.notificationSettings = event.data.settings;
+    console.log('Notification settings updated:', self.notificationSettings);
+    updatePeriodicSync();
+  } else if (event.data && event.data.type === 'TEST_NOTIFICATION') {
+    self.registration.showNotification('Test Notification', {
+      body: 'This is a test notification.',
+      icon: '/favicon.svg'
+    });
   }
 });
 
