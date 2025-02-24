@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Box, TextField, IconButton, Chip, Autocomplete, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Switch, Snackbar, Alert } from '@mui/material';
+import { Modal, Box, TextField, IconButton, Chip, Autocomplete, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Switch, Snackbar, Alert, Typography, Divider } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import NotificationsIcon from '@mui/icons-material/Notifications'; // Import NotificationsIcon
 import SaveIcon from '@mui/icons-material/Save'; // Import SaveIcon
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'; // Import CheckCircleIcon
+import CancelIcon from '@mui/icons-material/Cancel'; // Import CancelIcon
 import { ElegantButton } from './StyledComponents'; // Import ElegantButton
 
 const style = {
@@ -11,6 +13,8 @@ const style = {
   left: '50%',
   transform: 'translate(-50%, -50%)',
   width: 400,
+  maxHeight: '90vh', // Add maxHeight
+  overflowY: 'auto', // Add overflowY
   bgcolor: 'background.paper',
   boxShadow: 24,
   p: 4,
@@ -31,6 +35,7 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
   const [value, setValue] = useState(notificationSettings.interval);
   const [selectedStores, setSelectedStores] = useState(notificationSettings.selectedStores || { chain1: [], chain2: [] });
   const [notificationPermission, setNotificationPermission] = useState(Notification.permission); // Add state for notification permission
+  const [periodicSyncAllowed, setPeriodicSyncAllowed] = useState(false); // Add state for periodic sync permission
   const [snackbarOpen, setSnackbarOpen] = useState(false); // Add state for Snackbar
   const [snackbarMessage, setSnackbarMessage] = useState(''); // Add state for Snackbar message
 
@@ -55,45 +60,70 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
     }
   }, [open, notificationSettings]);
 
-  const handleSave = () => {
-    let interval;
-    switch (unit) {
-      case 'days':
-        interval = value * 1440;
-        break;
-      case 'hours':
-        interval = value * 60;
-        break;
-      case 'minutes':
-      default:
-        interval = value;
-        break;
-    }
-    const updatedSelectedStores = {
-      chain1: selectedStores.chain1.sort((a, b) => a.name.localeCompare(b.name)) || [],
-      chain2: selectedStores.chain2.sort((a, b) => a.name.localeCompare(b.name)) || []
-    };
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Saving settings with interval:', interval, 'and selectedStores:', updatedSelectedStores);
-    }
-    const newSettings = { notificationsEnabled, interval, selectedStores: updatedSelectedStores, allStores: notificationSettings.allStores };
-    setNotificationSettings(newSettings);
-
-    // Persist settings to local storage
-    localStorage.setItem('notificationSettings', JSON.stringify(newSettings));
-
-    // Send settings to the service worker
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'SET_NOTIFICATION_SETTINGS',
-        settings: newSettings
+  useEffect(() => {
+    if ('periodicSync' in navigator.serviceWorker) {
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.periodicSync.getTags().then((tags) => {
+          setPeriodicSyncAllowed(tags.includes('check-product-availability'));
+        }).catch(() => {
+          setPeriodicSyncAllowed(false);
+        });
       });
     }
+  }, []);
 
-    if (onSave) {
-      onSave(); // Call onSave to show Snackbar
+  useEffect(() => {
+    if (notificationsEnabled && (notificationPermission !== 'granted' || !periodicSyncAllowed)) {
+      setNotificationsEnabled(false);
+      setSnackbarMessage('Notifications have been disabled due to missing permissions. Please enable notifications in your browser settings and ensure periodic sync is allowed.');
+      setSnackbarOpen(true);
     }
-    handleClose();
+  }, [notificationsEnabled, notificationPermission, periodicSyncAllowed]);
+
+  const handleSave = () => {
+    if (!notificationsEnabled || (notificationPermission === 'granted' && periodicSyncAllowed)) {
+      let interval;
+      switch (unit) {
+        case 'days':
+          interval = value * 1440;
+          break;
+        case 'hours':
+          interval = value * 60;
+          break;
+        case 'minutes':
+        default:
+          interval = value;
+          break;
+      }
+      const updatedSelectedStores = {
+        chain1: selectedStores.chain1.sort((a, b) => a.name.localeCompare(b.name)) || [],
+        chain2: selectedStores.chain2.sort((a, b) => a.name.localeCompare(b.name)) || []
+      };
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Saving settings with interval:', interval, 'and selectedStores:', updatedSelectedStores);
+      }
+      const newSettings = { notificationsEnabled, interval, selectedStores: updatedSelectedStores, allStores: notificationSettings.allStores };
+      setNotificationSettings(newSettings);
+
+      // Persist settings to local storage
+      localStorage.setItem('notificationSettings', JSON.stringify(newSettings));
+
+      // Send settings to the service worker
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SET_NOTIFICATION_SETTINGS',
+          settings: newSettings
+        });
+      }
+
+      if (onSave) {
+        onSave(); // Call onSave to show Snackbar
+      }
+      handleClose();
+    } else {
+      setSnackbarMessage('Cannot enable notifications without required permissions. Please enable notifications in your browser settings and ensure periodic sync is allowed.');
+      setSnackbarOpen(true);
+    }
   };
 
   const handleStoreChange = (chainId, newValue) => {
@@ -126,7 +156,7 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
       } else {
         setNotificationsEnabled(false);
         setNotificationPermission(permission);
-        setSnackbarMessage('Notification permission denied.');
+        setSnackbarMessage('Notification permission denied. Please enable notifications in your browser settings.');
         setSnackbarOpen(true);
       }
     } else {
@@ -151,8 +181,6 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
     return a.name.localeCompare(b.name);
   });
 
-  console.log('Rendering modal with allStores:', allStores, 'and selectedStores:', selectedStores);
-
   return (
     <Modal open={open} onClose={handleClose}>
       <Box sx={style}>
@@ -166,15 +194,37 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
           </IconButton>
         </Box>
         <FormControlLabel
-          control={<Switch checked={notificationsEnabled} onChange={handleNotificationSwitchChange} disabled={notificationPermission !== 'granted'} />}
+          control={<Switch checked={notificationsEnabled} onChange={handleNotificationSwitchChange} disabled={notificationPermission !== 'granted' || !periodicSyncAllowed} />}
           label="Enable Notifications"
           sx={{ mb: 2 }}
         />
+        <Divider sx={{ mb: 2 }} />
+        <FormControl component="fieldset" sx={{ mb: 2 }}>
+          <FormLabel component="legend">Required Permissions</FormLabel>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, ml: 2, mt: 2 }}>
+            {notificationPermission === 'granted' ? (
+              <CheckCircleIcon color="success" sx={{ mr: 1 }} />
+            ) : (
+              <CancelIcon color="error" sx={{ mr: 1 }} />
+            )}
+            <Typography variant="body2">Notifications Permission</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, ml: 2 }}>
+            {periodicSyncAllowed ? (
+              <CheckCircleIcon color="success" sx={{ mr: 1 }} />
+            ) : (
+              <CancelIcon color="error" sx={{ mr: 1 }} />
+            )}
+            <Typography variant="body2">Periodic Sync Permission</Typography>
+          </Box>
+        </FormControl>
+        {(!notificationPermission || !periodicSyncAllowed) && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            To enable notifications, please ensure that notifications are allowed in your browser settings and that periodic sync is enabled.
+          </Alert>
+        )}
         {notificationsEnabled && (
           <>
-            <ElegantButton variant="outlined" onClick={handleTestNotification} fullWidth sx={{ mb: 2 }}>
-              Test Notification
-            </ElegantButton>
             <FormControl component="fieldset" sx={{ mb: 2 }}>
               <FormLabel component="legend">Notification Interval</FormLabel>
               <RadioGroup row value={unit} onChange={(e) => setUnit(e.target.value)}>
@@ -195,7 +245,7 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
             />
             {Object.keys(availableStores).map((chainId) => (
               <Box key={chainId} sx={{ mb: 2 }}>
-                <h3>Select Stores for {chainId === 'chain1' ? 'Auto Mercado' : 'PriceSmart'}</h3>
+                <Typography variant="h6" sx={{ mb: 1 }}>Select Stores for {chainId === 'chain1' ? 'Auto Mercado' : 'PriceSmart'}</Typography>
                 <Autocomplete
                   multiple
                   options={availableStores[chainId].sort((a, b) => {
@@ -228,6 +278,9 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
                 />
               </Box>
             ))}
+            <ElegantButton variant="outlined" onClick={handleTestNotification} fullWidth sx={{ mb: 2 }}>
+              Test Notification
+            </ElegantButton>
           </>
         )}
         <ElegantButton variant="outlined" onClick={handleSave} fullWidth startIcon={<SaveIcon />}>

@@ -39,7 +39,7 @@ const AppMenu = ({ anchorEl, handleMenuClose, toggleTheme, themeMode, isMenuOpen
                 <ListItemIcon>
                     <NotificationsIcon />
                 </ListItemIcon>
-                <ListItemText primary="Notifications" />
+                <ListItemText primary="Notification Settings" />
             </MenuItem>
         </Menu>
     );
