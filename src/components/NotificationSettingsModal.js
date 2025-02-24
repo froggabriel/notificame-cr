@@ -30,6 +30,7 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
   const [unit, setUnit] = useState('minutes');
   const [value, setValue] = useState(notificationSettings.interval);
   const [selectedStores, setSelectedStores] = useState(notificationSettings.selectedStores || { chain1: [], chain2: [] });
+  const [notificationPermission, setNotificationPermission] = useState(Notification.permission); // Add state for notification permission
 
   useEffect(() => {
     if (open) {
@@ -105,6 +106,21 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
     }
   };
 
+  const handleNotificationSwitchChange = async (event) => {
+    if (event.target.checked && notificationPermission !== 'granted') {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        setNotificationsEnabled(true);
+        setNotificationPermission(permission);
+      } else {
+        setNotificationsEnabled(false);
+        setNotificationPermission(permission);
+      }
+    } else {
+      setNotificationsEnabled(event.target.checked);
+    }
+  };
+
   const allStores = notificationSettings.allStores || { chain1: [], chain2: [] };
 
   // Filter out already selected stores
@@ -137,7 +153,7 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
           </IconButton>
         </Box>
         <FormControlLabel
-          control={<Switch checked={notificationsEnabled} onChange={(e) => setNotificationsEnabled(e.target.checked)} />}
+          control={<Switch checked={notificationsEnabled} onChange={handleNotificationSwitchChange} />}
           label="Enable Notifications"
           sx={{ mb: 2 }}
         />
