@@ -644,10 +644,10 @@ function App() {
                         <Autocomplete
                             freeSolo
                             options={searchResults.sort((a, b) => {
-                                const nameA = selectedChain === 'chain2' ? a.text : a.ecomDescription;
-                                const nameB = selectedChain === 'chain2' ? b.text : b.ecomDescription;
-                                const isCostaRicaA = costaRicaStoreNames.some(name => a.text.includes(name));
-                                const isCostaRicaB = costaRicaStoreNames.some(name => b.text.includes(name));
+                                const nameA = selectedChain === 'chain2' ? a.text || '' : a.ecomDescription || '';
+                                const nameB = selectedChain === 'chain2' ? b.text || '' : b.ecomDescription || '';
+                                const isCostaRicaA = costaRicaStoreNames.some(name => (a.text || '').includes(name));
+                                const isCostaRicaB = costaRicaStoreNames.some(name => (b.text || '').includes(name));
                                 if (isCostaRicaA && !isCostaRicaB) return -1;
                                 if (!isCostaRicaA && isCostaRicaB) return 1;
                                 return nameA.localeCompare(nameB);
@@ -670,7 +670,7 @@ function App() {
                                                 filter: selectedChain === 'chain1' && !option.available ? 'grayscale(100%)' : 'none' // Apply grayscale filter only for chain1
                                             }} // Increase image size
                                         />
-                                        {renderHighlightedText(selectedChain === 'chain2' ? option.text : option._snippetResult.ecomDescription.value)}
+                                        {renderHighlightedText(selectedChain === 'chain2' ? option.text || '' : option._snippetResult?.ecomDescription?.value || '')}
                                     </Box>
                                 );
                             }}
