@@ -39,6 +39,7 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import ChainSelector from './components/ChainSelector';
 import AppMenu from './components/AppMenu';
 import useDebounce from './hooks/useDebounce'; // Add useDebounce import
+import { getFromDB, saveToDB } from './utils/indexedDB'; // Import IndexedDB utility functions
 
 const costaRicaStoreNames = ['Llorente', 'Escazú', 'Alajuela', 'Cartago', 'Zapote', 'Heredia', 'Tres Ríos', 'Liberia', 'Santa Ana'];
 
@@ -73,17 +74,34 @@ function App() {
     const debouncedSearchInputValue = useDebounce(searchInputValue, 100); // Add debounced search input value
     const searchInputRef = useRef(null); // Add reference for search input
     const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false); // Add state for modal visibility
-    const [notificationSettings, setNotificationSettings] = useState(() => {
-        const savedSettings = localStorage.getItem('notificationSettings');
-        return savedSettings ? JSON.parse(savedSettings) : {
-            notificationsEnabled: false,
-            interval: 60,
-            selectedStores: { chain1: [], chain2: [] },
-            allStores: { chain1: [], chain2: [] }
-        };
+    const [notificationSettings, setNotificationSettings] = useState({
+        notificationsEnabled: false,
+        interval: 60,
+        selectedStores: { chain1: [], chain2: [] },
+        allStores: { chain1: [], chain2: [] }
     });
-    const [isNotificationSettingsModalOpen, setIsNotificationSettingsModalOpen] = useState(false);
+
+    useEffect(() => {
+        const loadSettingsFromIndexedDB = async () => {
+            try {
+                const settings = await getFromDB('notificationSettings');
+                if (settings) {
+                    setNotificationSettings(settings);
+                }
+            } catch (error) {
+                console.error('Error loading notification settings from IndexedDB:', error);
+            }
+        };
+        loadSettingsFromIndexedDB();
+    }, []);
+
+    // Save notification settings to IndexedDB whenever they change
+    useEffect(() => {
+        saveToDB('notificationSettings', notificationSettings);
+    }, [notificationSettings]);
+
     const [snackbarOpen, setSnackbarOpen] = useState(false); // Add state for Snackbar
+    const [isNotificationSettingsModalOpen, setIsNotificationSettingsModalOpen] = useState(false); // Add state for NotificationSettingsModal visibility
 
     const PROXY_URL = process.env.NODE_ENV === 'production' 
         ? process.env.REACT_APP_PROXY_URL_PROD 
@@ -95,20 +113,18 @@ function App() {
 
     const LOCAL_STORAGE_KEY = 'productIds';
 
-    // Function to load state from local storage
-    const loadStateFromLocalStorage = () => {
+    // Function to load state from IndexedDB
+    const loadStateFromIndexedDB = async () => {
         try {
-            const serializedState = localStorage.getItem(LOCAL_STORAGE_KEY);
-            return serializedState ? JSON.parse(serializedState) : null;
+            const state = await getFromDB(LOCAL_STORAGE_KEY);
+            return state || null;
         } catch (error) {
-            console.error('Error loading state from local storage:', error);
+            console.error('Error loading state from IndexedDB:', error);
             return null;
         }
     };
 
-    const savedState = loadStateFromLocalStorage();
-
-    const [productIds, setProductIds] = useState(savedState || {
+    const [productIds, setProductIds] = useState({
         chain1: [
             "6a237f75-d599-ec11-b400-000d3a347b43",
             "1c4d9e75-d599-ec11-b400-000d3a347ca0",
@@ -120,33 +136,50 @@ function App() {
         ]
     });
 
-    // Function to save state to local storage
-    const saveStateToLocalStorage = (state) => {
+    useEffect(() => {
+        const loadStateFromIndexedDB = async () => {
+            try {
+                const state = await getFromDB(LOCAL_STORAGE_KEY);
+                if (state) {
+                    setProductIds(state);
+                }
+            } catch (error) {
+                console.error('Error loading state from IndexedDB:', error);
+            }
+        };
+        loadStateFromIndexedDB();
+    }, []);
+
+    // Function to save state to IndexedDB
+    const saveStateToIndexedDB = async (state) => {
         try {
-            const serializedState = JSON.stringify(state);
-            localStorage.setItem(LOCAL_STORAGE_KEY, serializedState);
+            await saveToDB(LOCAL_STORAGE_KEY, state);
         } catch (error) {
-            console.error('Error saving state to local storage:', error);
+            console.error('Error saving state to IndexedDB:', error);
         }
     };
 
-    // Save state to local storage whenever productIds changes
+    // Save state to IndexedDB whenever productIds changes
     useEffect(() => {
-        saveStateToLocalStorage(productIds);
+        saveStateToIndexedDB(productIds);
     }, [productIds]);
 
-    // Save selected chain and products to local storage whenever they change
+    // Save selected chain and products to IndexedDB whenever they change
     useEffect(() => {
-        localStorage.setItem('selectedChain', selectedChain);
+        saveToDB('selectedChain', selectedChain);
     }, [selectedChain]);
 
     useEffect(() => {
-        localStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
+        saveToDB('selectedProducts', selectedProducts);
     }, [selectedProducts]);
 
     useEffect(() => {
-        localStorage.setItem('showOnlyCRStores', showOnlyCRStores);
+        saveToDB('showOnlyCRStores', showOnlyCRStores);
     }, [showOnlyCRStores]);
+
+    useEffect(() => {
+        saveToDB('notificationSettings', notificationSettings);
+    }, [notificationSettings]);
 
     useEffect(() => {
         const fetchAllStores = async () => {
@@ -192,13 +225,24 @@ function App() {
             console.log('beforeinstallprompt event fired');
         });
 
+        console.log("Attempting to register service worker...", navigator.serviceWorker, window.PeriodicSyncManager);
         if ('serviceWorker' in navigator && 'PeriodicSyncManager' in window) {
+            console.log("All in order");
             navigator.serviceWorker.ready.then((registration) => {
-                registration.periodicSync.register('check-product-availability', {
-                    minInterval: notificationSettings.interval * 60 * 1000 // Convert minutes to milliseconds
-                }).catch((error) => {
-                    console.error('Error registering periodic sync:', error);
-                });
+                console.log('Service worker is ready:', registration);
+                const minInterval = notificationSettings.interval * 60 * 1000; // Convert minutes to milliseconds
+                if (minInterval > 0 && minInterval <= Number.MAX_SAFE_INTEGER) {
+                    registration.periodicSync.register('check-product-availability', {
+                        minInterval: minInterval
+                    }).catch((error) => {
+                        console.error('Error registering periodic sync:', error);
+                    });
+                    console.log("Service worker registered using ", notificationSettings);
+                } else {
+                    console.error('Invalid minInterval value:', minInterval);
+                }
+            }).catch((error) => {
+                console.error('Error during service worker ready:', error);
             });
         }
     }, [notificationSettings.interval]);
@@ -625,11 +669,6 @@ function App() {
             }));
         }
     }, [stores, selectedChain]);
-
-    useEffect(() => {
-        localStorage.setItem('notificationInterval', notificationSettings.interval);
-        localStorage.setItem('selectedStores', JSON.stringify(notificationSettings.selectedStores));
-    }, [notificationSettings]);
 
     useEffect(() => {
         console.log('Updated notificationSettings:', notificationSettings);

@@ -7,6 +7,66 @@ const urlsToCache = [
   // Add other assets you want to cache
 ];
 
+// IndexedDB utility functions
+const DB_NAME = 'myAppDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'appStore';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
+    };
+
+    request.onerror = (event) => {
+      reject(event.target.error);
+    };
+  });
+}
+
+async function getFromDB(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get(key);
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
+    };
+
+    request.onerror = (event) => {
+      reject(event.target.error);
+    };
+  });
+}
+
+async function saveToDB(key, value) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.put(value, key);
+
+    request.onsuccess = () => {
+      resolve();
+    };
+
+    request.onerror = (event) => {
+      reject(event.target.error);
+    };
+  });
+}
+
 self.addEventListener('install', (event) => {
   console.log('Service worker installing...');
   event.waitUntil(
@@ -35,27 +95,63 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (!cacheWhitelist.includes(cacheName)) {
+            console.log(`Deleting cache: ${cacheName}`); // Add logging
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+      console.log('Taking control of the page');
+      return self.clients.claim(); // Take control of the page
+    }).then(() => {
+      console.log('Service worker activated and page taken control');
+    }).catch((error) => {
+      console.error('Error during service worker activation:', error);
     })
   );
 
   // Register periodic sync if supported
   if ('periodicSync' in self.registration) {
-    event.waitUntil(
-      self.registration.periodicSync.register('check-product-availability', {
-        minInterval: 60 * 1000 // 1 minute
-      }).then(() => {
-        console.log('Periodic sync registered');
-      }).catch((error) => {
-        console.error('Error registering periodic sync:', error);
-      })
-    );
+    console.log('Periodic sync is supported'); // Add logging
+    getFromDB('notificationSettings').then((settings) => {
+      if (settings && settings.interval) {
+        const minInterval = settings.interval * 60 * 1000; // Convert minutes to milliseconds
+        if (minInterval > 0 && minInterval <= Number.MAX_SAFE_INTEGER) {
+          event.waitUntil(
+            self.registration.periodicSync.register('check-product-availability', {
+              minInterval: minInterval
+            }).then(() => {
+              console.log('Periodic sync registered');
+            }).catch((error) => {
+              console.error('Error registering periodic sync:', error);
+            })
+          );
+        } else {
+          console.error('Invalid minInterval value:', minInterval);
+        }
+      } else {
+        console.error('Notification settings not found or invalid');
+      }
+    }).catch((error) => {
+      console.error('Error getting notification settings from IndexedDB:', error);
+    });
   } else {
     console.warn('Periodic sync is not supported');
   }
+
+  // Conditionally register periodic check using setInterval based on notification settings
+  getFromDB('notificationSettings').then((settings) => {
+    if (settings && settings.notificationsEnabled) {
+      const interval = settings.interval * 60 * 1000; // Convert minutes to milliseconds
+      console.log('interval ', interval);
+      setInterval(() => {
+        console.log('Periodic check for product availability');
+        checkProductAvailability();
+      }, interval); // Check based on the interval from settings
+    }
+  }).catch((error) => {
+    console.error('Error getting notification settings from IndexedDB:', error);
+  });
 });
 
 self.addEventListener('push', (event) => {
@@ -66,7 +162,11 @@ self.addEventListener('push', (event) => {
     badge: data.badge
   };
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(data.title, options).then(() => {
+      console.log('Push notification displayed:', data.title, options); // Add logging
+    }).catch((error) => {
+      console.error('Error displaying push notification:', error); // Add logging
+    })
   );
 });
 
@@ -103,10 +203,11 @@ self.addEventListener('message', (event) => {
 async function checkProductAvailability() {
   console.log('Checking product availability...');
   try {
-    const productIds = await getProductIdsFromLocalStorage();
-    const selectedChain = await getSelectedChainFromLocalStorage();
+    const productIds = await getFromDB('productIds');
+    const selectedChain = await getFromDB('selectedChain');
     const stores = await getStores(selectedChain);
-    const showOnlyCRStores = await getShowOnlyCRStoresFromLocalStorage();
+    const showOnlyCRStores = await getFromDB('showOnlyCRStores');
+    const previousAvailability = await getFromDB('previousAvailability') || {};
 
     const availability = await fetchAllProductsAvailability(
       selectedChain,
@@ -121,43 +222,48 @@ async function checkProductAvailability() {
       stores
     );
 
-    if (availability.changes.length > 0) {
-      availability.changes.forEach(change => {
+    const changes = [];
+    availability.forEach(product => {
+      const previousProduct = previousAvailability[product.productId];
+      if (!previousProduct || previousProduct.availableAnywhere !== product.availableAnywhere) {
+        changes.push(product);
+      }
+    });
+
+    console.log("changes ", changes);
+
+    if (changes.length > 0) {
+      changes.forEach(change => {
         self.registration.showNotification('Product Availability Update', {
-          body: `${change.productName} is now ${change.status}.`,
+          body: `${change.name} is now ${change.availableAnywhere ? 'available' : 'unavailable'}.`,
           icon: '/favicon.svg'
+        }).then(() => {
+          console.log('Product availability notification displayed:', change.name, change.availableAnywhere); // Add logging
+        }).catch((error) => {
+          console.error('Error displaying product availability notification:', error); // Add logging
         });
       });
     } else {
       self.registration.showNotification('Product Availability Update', {
         body: 'No changes in product availability.',
         icon: '/favicon.svg'
+      }).then(() => {
+        console.log('No changes in product availability notification displayed'); // Add logging
+      }).catch((error) => {
+        console.error('Error displaying no changes in product availability notification:', error); // Add logging
       });
     }
+
+    // Save the current availability to IndexedDB for future comparisons
+    const newAvailability = {};
+    availability.forEach(product => {
+      newAvailability[product.productId] = product;
+    });
+    await saveToDB('previousAvailability', newAvailability);
+
   } catch (error) {
     console.error('Error checking product availability:', error);
   }
-}
-
-async function getProductIdsFromLocalStorage() {
-  return new Promise((resolve) => {
-    const productIds = localStorage.getItem('productIds');
-    resolve(productIds ? JSON.parse(productIds) : { chain1: [], chain2: [] });
-  });
-}
-
-async function getSelectedChainFromLocalStorage() {
-  return new Promise((resolve) => {
-    const selectedChain = localStorage.getItem('selectedChain');
-    resolve(selectedChain || 'chain1');
-  });
-}
-
-async function getShowOnlyCRStoresFromLocalStorage() {
-  return new Promise((resolve) => {
-    const showOnlyCRStores = localStorage.getItem('showOnlyCRStores');
-    resolve(showOnlyCRStores === 'true');
-  });
 }
 
 async function getStores(selectedChain) {
@@ -273,6 +379,7 @@ async function fetchAllProductsAvailability(selectedChain, productIds, setProduc
         });
 
         setProducts(sortedProducts);
+        return sortedProducts;
       })
       .catch(error => {
         setLoading(false);
@@ -338,11 +445,41 @@ async function fetchAllProductsAvailability(selectedChain, productIds, setProduc
         }).filter(product => product !== null);
 
         setProducts(productList);
+        return productList;
       })
       .catch(error => {
         setLoading(false);
         setError('Error fetching product availability. Please try again.');
         console.error('Error checking availability:', error);
       });
+  }
+}
+
+async function updatePeriodicSync() {
+  if ('periodicSync' in self.registration) {
+    try {
+      const tags = await self.registration.periodicSync.getTags();
+      if (tags.includes('check-product-availability')) {
+        await self.registration.periodicSync.unregister('check-product-availability');
+      }
+      const settings = await getFromDB('notificationSettings');
+      if (settings && settings.interval) {
+        const minInterval = settings.interval * 60 * 1000; // Convert minutes to milliseconds
+        if (minInterval > 0 && minInterval <= Number.MAX_SAFE_INTEGER) {
+          await self.registration.periodicSync.register('check-product-availability', {
+            minInterval: minInterval
+          });
+          console.log('Periodic sync updated');
+        } else {
+          console.error('Invalid minInterval value:', minInterval);
+        }
+      } else {
+        console.error('Notification settings not found or invalid');
+      }
+    } catch (error) {
+      console.error('Error updating periodic sync:', error);
+    }
+  } else {
+    console.warn('Periodic sync is not supported');
   }
 }

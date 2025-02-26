@@ -20,6 +20,8 @@ export function register(config) {
         checkValidServiceWorker(swUrl, config);
         navigator.serviceWorker.ready.then(() => {
           console.log('App is being served by a service worker in localhost.');
+        }).catch(error => {
+          console.error('Error during service worker ready in localhost:', error);
         });
       } else {
         registerValidSW(swUrl, config);
@@ -34,26 +36,29 @@ export function register(config) {
       console.log('beforeinstallprompt event fired');
     });
 
-    // Add push subscription
+    // Set PROXY_URL in the service worker
     navigator.serviceWorker.ready.then(registration => {
-      registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(process.env.REACT_APP_VAPID_PUBLIC_KEY)
-      }).then(subscription => {
-        console.log('Push subscription:', subscription);
-        // Send subscription to the server
-      }).catch(error => {
-        console.error('Push subscription error:', error);
-      });
-
-      // Set PROXY_URL in the service worker
-      registration.active.postMessage({
-        type: 'SET_PROXY_URL',
-        proxyUrl: process.env.NODE_ENV === 'production' 
-          ? process.env.REACT_APP_PROXY_URL_PROD 
-          : process.env.REACT_APP_PROXY_URL
-      });
+      if (registration.active) {
+        console.log('Service worker is active:', registration.active);
+        registration.active.postMessage({
+          type: 'SET_PROXY_URL',
+          proxyUrl: process.env.NODE_ENV === 'production' 
+            ? process.env.REACT_APP_PROXY_URL_PROD 
+            : process.env.REACT_APP_PROXY_URL
+        });
+      } else {
+        console.warn('Service worker is not active yet.');
+      }
+    }).catch(error => {
+      console.error('Error during service worker ready:', error);
     });
+
+    // Check for periodicSync support
+    if ('periodicSync' in navigator.serviceWorker) {
+      console.log('Periodic sync is supported in this browser.');
+    } else {
+      console.warn('Periodic sync is not supported in this browser.');
+    }
   }
 }
 
@@ -61,11 +66,13 @@ function registerValidSW(swUrl, config) {
   navigator.serviceWorker
     .register(swUrl)
     .then((registration) => {
+      console.log('Service worker registered:', registration);
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
         if (!installingWorker) return;
 
         installingWorker.onstatechange = () => {
+          console.log('Service worker state changed:', installingWorker.state);
           if (installingWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
               console.log('New content is available.');
@@ -119,19 +126,4 @@ export function unregister() {
         console.error(error.message);
       });
   }
-}
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
 }

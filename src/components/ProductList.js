@@ -11,7 +11,7 @@ import {
     Typography // Add Typography import
 } from '@mui/material';
 import { StyledMenuItem } from './StyledComponents';
-import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteIcon from '@mui/icons-material/Delete'; // Correct import path
 
 const ProductList = ({ products, selectedProduct, handleProductChange, handleRemoveProduct }) => {
     const handleRemoveClick = (event, productId) => {
@@ -29,13 +29,16 @@ const ProductList = ({ products, selectedProduct, handleProductChange, handleRem
         }).format(price).replace(/\s/g, '.');
     };
 
+    // Ensure the selected product is in the list of available products
+    const selectedProductData = products.find(product => product.productId === selectedProduct);
+
     return (
         <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel id="product-select-label">Select a Product</InputLabel>
             <Select
                 labelId="product-select-label"
                 id="product-select"
-                value={selectedProduct || ''}
+                value={selectedProductData ? selectedProduct : ''}
                 label="Select a Product"
                 onChange={handleProductChange}
                 renderValue={(selected) => {
