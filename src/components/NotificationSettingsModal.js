@@ -22,11 +22,18 @@ const style = {
 };
 
 const defaultAutoMercadoStores = [
-  'AM Plaza del Sol',
   'AM Guadalupe',
   'AM Guayabos',
+  'AM Moravia',
+  'AM Plaza del Sol',
   'AM Tres Rios'
 ].sort();
+
+const defaultPriceSmartStores = [
+  'Llorente',
+  'Tres Ríos',
+  'Zapote'
+];
 
 const costaRicaStoreNames = ['Llorente', 'Escazú', 'Alajuela', 'Cartago', 'Zapote', 'Heredia', 'Tres Ríos', 'Liberia', 'Santa Ana'];
 
@@ -56,6 +63,15 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
         setSelectedStores(prevSelectedStores => ({
           ...prevSelectedStores,
           chain1: autoMercadoStores
+        }));
+      }
+
+      // Set default stores for PriceSmart if not already set
+      if (!notificationSettings.selectedStores.chain2 || notificationSettings.selectedStores.chain2.length === 0) {
+        const priceSmartStores = notificationSettings.allStores.chain2.filter(store => defaultPriceSmartStores.includes(store.name));
+        setSelectedStores(prevSelectedStores => ({
+          ...prevSelectedStores,
+          chain2: priceSmartStores
         }));
       }
     }
