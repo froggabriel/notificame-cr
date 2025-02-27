@@ -49,9 +49,9 @@ function App() {
         { id: 'chain1', name: 'Auto Mercado', image: 'https://automercado.cr/content/images/ico/cropped-Icono-Auto-Mercado-1-1-192x192.png' },
         { id: 'chain2', name: 'PriceSmart', image: 'https://pricesmart.bloomreach.io/delivery/resources/content/gallery/pricesmart/header/logomobile.svg' }
     ]);
-    const [selectedChain, setSelectedChain] = useState(localStorage.getItem('selectedChain') || 'chain1');
+    const [selectedChain, setSelectedChain] = useState('chain1');
     const [stores, setStores] = useState({ chain1: [], chain2: [] });
-    const [selectedProducts, setSelectedProducts] = useState(JSON.parse(localStorage.getItem('selectedProducts')) || { chain1: '', chain2: '' });
+    const [selectedProducts, setSelectedProducts] = useState({ chain1: '', chain2: '' });
     const [productName, setProductName] = useState('');
     const [productImage, setProductImage] = useState('');
     const [availability, setAvailability] = useState({});
@@ -68,7 +68,7 @@ function App() {
     const [copySuccess, setCopySuccess] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [showOnlyCRStores, setShowOnlyCRStores] = useState(localStorage.getItem('showOnlyCRStores') === 'true');
+    const [showOnlyCRStores, setShowOnlyCRStores] = useState(false);
     const [searchResults, setSearchResults] = useState([]); // Added state for search results
     const [searchInputValue, setSearchInputValue] = useState(''); // Added state for search input value
     const debouncedSearchInputValue = useDebounce(searchInputValue, 100); // Add debounced search input value
@@ -80,38 +80,6 @@ function App() {
         selectedStores: { chain1: [], chain2: [] },
         allStores: { chain1: [], chain2: [] }
     });
-
-    useEffect(() => {
-        const loadSettingsFromIndexedDB = async () => {
-            try {
-                const settings = await getFromDB('notificationSettings');
-                if (settings) {
-                    setNotificationSettings(settings);
-                }
-            } catch (error) {
-                console.error('Error loading notification settings from IndexedDB:', error);
-            }
-        };
-        loadSettingsFromIndexedDB();
-    }, []);
-
-    // Save notification settings to IndexedDB whenever they change
-    useEffect(() => {
-        saveToDB('notificationSettings', notificationSettings);
-    }, [notificationSettings]);
-
-    const [snackbarOpen, setSnackbarOpen] = useState(false); // Add state for Snackbar
-    const [isNotificationSettingsModalOpen, setIsNotificationSettingsModalOpen] = useState(false); // Add state for NotificationSettingsModal visibility
-
-    const PROXY_URL = process.env.NODE_ENV === 'production' 
-        ? process.env.REACT_APP_PROXY_URL_PROD 
-        : process.env.REACT_APP_PROXY_URL;
-
-    const isSmallScreen = useMediaQuery('(max-width:600px)');
-    const isMediumScreen = useMediaQuery('(max-width:960px)');
-    const RECOMMENDATIONS_PER_PAGE = isSmallScreen ? 1 : isMediumScreen ? 2 : 3; // Adjust recommendations per page based on screen size
-
-    const LOCAL_STORAGE_KEY = 'productIds';
 
     const [productIds, setProductIds] = useState({
         chain1: [
@@ -125,13 +93,28 @@ function App() {
         ]
     });
 
+    const [stateLoaded, setStateLoaded] = useState(false); // Add stateLoaded flag
+
     useEffect(() => {
         const loadStateFromIndexedDB = async () => {
             try {
-                const state = await getFromDB(LOCAL_STORAGE_KEY);
-                if (state) {
-                    setProductIds(state);
-                }
+                const [chain, products, ids, showCRStores, settings] = await Promise.all([
+                    getFromDB('selectedChain'),
+                    getFromDB('selectedProducts'),
+                    getFromDB('productIds'),
+                    getFromDB('showOnlyCRStores'),
+                    getFromDB('notificationSettings')
+                ]);
+
+                console.log('Loaded state from IndexedDB:', { chain, products, ids, showCRStores, settings });
+
+                if (chain) setSelectedChain(chain);
+                if (products) setSelectedProducts(products);
+                if (ids) setProductIds(ids);
+                if (showCRStores !== undefined) setShowOnlyCRStores(showCRStores);
+                if (settings) setNotificationSettings(settings);
+
+                setStateLoaded(true); // Set stateLoaded to true after loading state
             } catch (error) {
                 console.error('Error loading state from IndexedDB:', error);
             }
@@ -139,36 +122,47 @@ function App() {
         loadStateFromIndexedDB();
     }, []);
 
-    // Function to save state to IndexedDB
-    const saveStateToIndexedDB = async (state) => {
-        try {
-            await saveToDB(LOCAL_STORAGE_KEY, state);
-        } catch (error) {
-            console.error('Error saving state to IndexedDB:', error);
+    // Save state to IndexedDB whenever relevant state changes
+    useEffect(() => {
+        if (stateLoaded) {
+            saveToDB('selectedChain', selectedChain);
         }
-    };
-
-    // Save state to IndexedDB whenever productIds changes
-    useEffect(() => {
-        saveStateToIndexedDB(productIds);
-    }, [productIds]);
-
-    // Save selected chain and products to IndexedDB whenever they change
-    useEffect(() => {
-        saveToDB('selectedChain', selectedChain);
-    }, [selectedChain]);
+    }, [selectedChain, stateLoaded]);
 
     useEffect(() => {
-        saveToDB('selectedProducts', selectedProducts);
-    }, [selectedProducts]);
+        if (stateLoaded) {
+            saveToDB('selectedProducts', selectedProducts);
+        }
+    }, [selectedProducts, stateLoaded]);
 
     useEffect(() => {
-        saveToDB('showOnlyCRStores', showOnlyCRStores);
-    }, [showOnlyCRStores]);
+        if (stateLoaded) {
+            saveToDB('productIds', productIds);
+        }
+    }, [productIds, stateLoaded]);
 
     useEffect(() => {
-        saveToDB('notificationSettings', notificationSettings);
-    }, [notificationSettings]);
+        if (stateLoaded) {
+            saveToDB('showOnlyCRStores', showOnlyCRStores);
+        }
+    }, [showOnlyCRStores, stateLoaded]);
+
+    useEffect(() => {
+        if (stateLoaded) {
+            saveToDB('notificationSettings', notificationSettings);
+        }
+    }, [notificationSettings, stateLoaded]);
+
+    const [snackbarOpen, setSnackbarOpen] = useState(false); // Add state for Snackbar
+    const [isNotificationSettingsModalOpen, setIsNotificationSettingsModalOpen] = useState(false); // Add state for NotificationSettingsModal visibility
+
+    const PROXY_URL = process.env.NODE_ENV === 'production' 
+        ? process.env.REACT_APP_PROXY_URL_PROD 
+        : process.env.REACT_APP_PROXY_URL;
+
+    const isSmallScreen = useMediaQuery('(max-width:600px)');
+    const isMediumScreen = useMediaQuery('(max-width:960px)');
+    const RECOMMENDATIONS_PER_PAGE = isSmallScreen ? 1 : isMediumScreen ? 2 : 3; // Adjust recommendations per page based on screen size
 
     useEffect(() => {
         const fetchAllStores = async () => {
@@ -276,10 +270,10 @@ function App() {
         }
     }, [selectedProducts, selectedChain, isProductAvailable, productName, productImage, PROXY_URL, showOnlyCRStores, stores]);
 
-    useEffect(() => {
-        const intervalId = setInterval(checkProductAvailability, 6000000); // Check every 6000 seconds
-        return () => clearInterval(intervalId);
-    }, [checkProductAvailability]);
+    // useEffect(() => {
+    //     const intervalId = setInterval(checkProductAvailability, 6000000); // Check every 6000 seconds
+    //     return () => clearInterval(intervalId);
+    // }, [checkProductAvailability]);
 
     const setAvailabilityForProduct = useCallback((productId, storeDetail, availableAnywhere) => {
         const storeAvailability = {};
@@ -324,13 +318,13 @@ function App() {
 
         setIsProductAvailable(productAvailableAnywhereVar);
 
-        if (productAvailableAnywhereVar) {
-            sendNotification('Product Available', {
-                body: `The product ${productName} is now available.`,
-                icon: productImage
-            });
-        }
-    }, [stores, selectedChain, productName, productImage]);
+        // if (productAvailableAnywhereVar) {
+        //     sendNotification('Product Available', {
+        //         body: `The product ${productName} is now available.`,
+        //         icon: productImage
+        //     });
+        // }
+    }, [stores, selectedChain]);
 
     const handleProductChange = (event) => {
         const newProductId = event.target.value;
