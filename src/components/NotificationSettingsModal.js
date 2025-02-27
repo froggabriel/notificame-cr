@@ -163,7 +163,12 @@ const NotificationSettingsModal = ({ open, handleClose, notificationSettings, se
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       console.log('Service worker controller found. Sending TEST_NOTIFICATION message.'); // Add logging
       navigator.serviceWorker.controller.postMessage({
-        type: 'TEST_NOTIFICATION'
+        type: 'TEST_NOTIFICATION',
+        options: {
+          body: 'This is a test notification.',
+          icon: '/favicon.svg',
+          badge: '/favicon.svg' // Add badge property
+        }
       });
     } else {
       console.log("navigator: ", navigator)

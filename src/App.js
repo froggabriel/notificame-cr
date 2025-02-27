@@ -669,6 +669,28 @@ function App() {
         console.log('Updated notificationSettings:', notificationSettings);
     }, [notificationSettings]);
 
+    useEffect(() => {
+        const handleServiceWorkerMessage = (event) => {
+            if (event.data && event.data.type === 'SWITCH_CHAIN_AND_PRODUCT') {
+                const { chain, productId } = event.data;
+                console.log('Received message from service worker:', { chain, productId }); // Add logging
+                setSelectedChain(chain);
+                setSelectedProducts((prevSelectedProducts) => ({
+                    ...prevSelectedProducts,
+                    [chain]: productId
+                }));
+            } else {
+                console.log('Received unknown message from service worker:', event.data); // Add logging
+            }
+        };
+
+        navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+
+        return () => {
+            navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+        };
+    }, []);
+
     return (
         <Container maxWidth="md">
             <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
