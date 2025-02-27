@@ -183,7 +183,21 @@ self.addEventListener('message', (event) => {
     console.log('Test notification triggered'); // Add logging
     self.registration.showNotification('Test Notification', {
       body: 'This is a test notification.',
-      icon: '/favicon.svg'
+      icon: '/favicon.svg',
+      badge: '/favicon.svg', // Ensure badge property is set
+      vibrate: [100, 50, 100],
+      priority: 'max',
+      data: {
+        dateOfArrival: Date.now(),
+        primaryKey: 1,
+        openUrl: 'https://example.com', // Example URL
+        priority: 'max'
+      },
+      actions: [
+        { action: 'explore', title: 'Nice!' },
+        { action: 'close', title: 'Close notification' }
+      ],
+      requireInteraction: true
     }).then(() => {
       console.log('Test notification displayed'); // Add logging
     }).catch((error) => {
@@ -264,12 +278,22 @@ async function checkProductAvailability() {
         self.registration.showNotification('Product Availability Update', {
           body: `${change.name} is now ${change.availableAnywhere ? 'available' : 'unavailable'} in ${chainNames[change.chain]}.`,
           icon: change.imageUrl || '/favicon.svg', // Use product image URL or fallback to favicon
-          badge: '/favicon.svg', // Add badge property
+          badge: '/favicon.svg', // Ensure badge property is set
+          vibrate: [100, 50, 100],
+          priority: 'max',
           data: {
-            url: '/',
+            dateOfArrival: Date.now(),
+            primaryKey: 1,
+            openUrl: '/', // Example URL
             chain: change.chain,
-            productId: change.productId
-          }
+            productId: change.productId,
+            priority: 'max'
+          },
+          actions: [
+            { action: 'explore', title: 'Nice!' },
+            { action: 'close', title: 'Close notification' }
+          ],
+          requireInteraction: true
         }).then(() => {
           console.log('Product availability notification displayed:', change.name, change.availableAnywhere); // Add logging
         }).catch((error) => {
