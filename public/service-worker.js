@@ -163,41 +163,6 @@ self.addEventListener('activate', (event) => {
   });
 });
 
-self.addEventListener('push', (event) => {
-  const data = event.data.json();
-  const options = {
-    body: data.body,
-    icon: data.icon || '/favicon.svg', // Use provided icon or fallback to favicon
-    badge: data.badge || '/favicon.svg', // Use provided badge or fallback to favicon
-    actions: data.actions || [], // Add actions if provided
-    data: data.url || '/' // Add URL to data for click handling
-  };
-  event.waitUntil(
-    self.registration.showNotification(data.title, options).then(() => {
-      console.log('Push notification displayed:', data.title, options); // Add logging
-    }).catch((error) => {
-      console.error('Error displaying push notification:', error); // Add logging
-    })
-  );
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const url = event.notification.data;
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url === url && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
-    })
-  );
-});
-
 self.addEventListener('periodicsync', (event) => {
   if (event.tag === 'check-product-availability') {
     console.log('Periodic sync event triggered');

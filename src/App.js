@@ -241,6 +241,10 @@ function App() {
         }
     };
 
+    useEffect(() => {
+        requestNotificationPermission();
+    }, []);
+
     // const sendNotification = (title, options) => {
     //     if ('Notification' in window && navigator.serviceWorker) {
     //         navigator.serviceWorker.ready.then(registration => {
