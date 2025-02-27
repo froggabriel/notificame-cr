@@ -219,13 +219,15 @@ async function checkProductAvailability() {
     console.log('Fetched data from IndexedDB:', { productIds, showOnlyCRStores, previousAvailability });
 
     const chains = ['chain1', 'chain2'];
+    const chainNames = {
+      chain1: 'Auto Mercado',
+      chain2: 'PriceSmart'
+    };
     const availabilityPromises = chains.map(async (chain) => {
       const stores = await getStores(chain);
       return fetchAllProductsAvailability(
         chain,
         productIds[chain],
-        () => {},
-        () => {},
         () => {},
         () => {},
         () => {},
@@ -253,8 +255,8 @@ async function checkProductAvailability() {
     if (changes.length > 0) {
       changes.forEach(change => {
         self.registration.showNotification('Product Availability Update', {
-          body: `${change.name} is now ${change.availableAnywhere ? 'available' : 'unavailable'} in ${change.chain}.`,
-          icon: '/favicon.svg'
+          body: `${change.name} is now ${change.availableAnywhere ? 'available' : 'unavailable'} in ${chainNames[change.chain]}.`,
+          icon: change.imageUrl || '/favicon.svg' // Use product image URL or fallback to favicon
         }).then(() => {
           console.log('Product availability notification displayed:', change.name, change.availableAnywhere); // Add logging
         }).catch((error) => {
@@ -324,11 +326,9 @@ async function fetchStores(chainId, resolve, reject, PROXY_URL) {
   }
 }
 
-async function fetchAllProductsAvailability(selectedChain, productIds, setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores) {
+async function fetchAllProductsAvailability(selectedChain, productIds, setProducts, setLoading, setError, PROXY_URL, showOnlyCRStores, stores) {
   setLoading(true);
   setError(null);
-  setAvailability({});
-  setIsProductAvailable(false);
 
   const costaRicaStoreNames = ['Llorente', 'Escazú', 'Alajuela', 'Cartago', 'Zapote', 'Heredia', 'Tres Ríos', 'Liberia', 'Santa Ana']; // Add Santa Ana
   const costaRicaStoreIds = stores
