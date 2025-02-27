@@ -339,10 +339,18 @@ function App() {
         if (newChainId !== selectedChain) {
             setSelectedChain(newChainId);
             setProducts([]);
-            setSelectedProducts(prevSelectedProducts => ({
-                ...prevSelectedProducts,
-                [newChainId]: ''
-            }));
+            // Ensure the selected product for the new chain is set
+            if (selectedProducts[newChainId]) {
+                setSelectedProducts(prevSelectedProducts => ({
+                    ...prevSelectedProducts,
+                    [newChainId]: selectedProducts[newChainId]
+                }));
+            } else {
+                setSelectedProducts(prevSelectedProducts => ({
+                    ...prevSelectedProducts,
+                    [newChainId]: ''
+                }));
+            }
         }
     };
 
