@@ -241,34 +241,34 @@ function App() {
         }
     };
 
-    const sendNotification = (title, options) => {
-        if ('Notification' in window && navigator.serviceWorker) {
-            navigator.serviceWorker.ready.then(registration => {
-                registration.showNotification(title, options);
-            });
-        }
-    };
+    // const sendNotification = (title, options) => {
+    //     if ('Notification' in window && navigator.serviceWorker) {
+    //         navigator.serviceWorker.ready.then(registration => {
+    //             registration.showNotification(title, options);
+    //         });
+    //     }
+    // };
 
     useEffect(() => {
         requestNotificationPermission();
     }, []);
 
-    const checkProductAvailability = useCallback(() => {
-        if (selectedProducts[selectedChain]) {
-            fetchAllProductsAvailability(selectedChain, [selectedProducts[selectedChain]], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores[selectedChain])
-                .then(() => {
-                    if (isProductAvailable) {
-                        sendNotification('Product Available', {
-                            body: `The product ${productName} is now available.`,
-                            icon: productImage
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking product availability:', error);
-                });
-        }
-    }, [selectedProducts, selectedChain, isProductAvailable, productName, productImage, PROXY_URL, showOnlyCRStores, stores]);
+    // const checkProductAvailability = useCallback(() => {
+    //     if (selectedProducts[selectedChain]) {
+    //         fetchAllProductsAvailability(selectedChain, [selectedProducts[selectedChain]], setProducts, setLoading, setError, setAvailability, setIsProductAvailable, PROXY_URL, showOnlyCRStores, stores[selectedChain])
+    //             .then(() => {
+    //                 if (isProductAvailable) {
+    //                     sendNotification('Product Available', {
+    //                         body: `The product ${productName} is now available.`,
+    //                         icon: productImage
+    //                     });
+    //                 }
+    //             })
+    //             .catch(error => {
+    //                 console.error('Error checking product availability:', error);
+    //             });
+    //     }
+    // }, [selectedProducts, selectedChain, isProductAvailable, productName, productImage, PROXY_URL, showOnlyCRStores, stores]);
 
     // useEffect(() => {
     //     const intervalId = setInterval(checkProductAvailability, 6000000); // Check every 6000 seconds
