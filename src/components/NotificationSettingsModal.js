@@ -6,7 +6,7 @@ import SaveIcon from '@mui/icons-material/Save'; // Import SaveIcon
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'; // Import CheckCircleIcon
 import CancelIcon from '@mui/icons-material/Cancel'; // Import CancelIcon
 import { ElegantButton } from './StyledComponents'; // Import ElegantButton
-import { getFromDB, saveToDB } from '../utils/indexedDB'; // Import IndexedDB utility functions
+import { saveToDB } from '../utils/indexedDB'; // Import IndexedDB utility functions
 
 const style = {
   position: 'absolute',

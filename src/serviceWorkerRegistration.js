@@ -1,3 +1,5 @@
+import { getFromDB } from './utils/indexedDB'; // Import getFromDB function
+
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||
   window.location.hostname === '[::1]' ||
@@ -37,7 +39,7 @@ export function register(config) {
     });
 
     // Set PROXY_URL in the service worker
-    navigator.serviceWorker.ready.then(registration => {
+    navigator.serviceWorker.ready.then(async registration => {
       if (registration.active) {
         console.log('Service worker is active:', registration.active);
         registration.active.postMessage({
@@ -46,19 +48,36 @@ export function register(config) {
             ? process.env.REACT_APP_PROXY_URL_PROD 
             : process.env.REACT_APP_PROXY_URL
         });
+
+        // Register periodic sync if supported
+        if ('periodicSync' in registration) {
+          console.log('Periodic sync is supported in this browser.');
+          try {
+            const settings = await getFromDB('notificationSettings');
+            const minInterval = settings.interval * 60 * 1000; // Convert minutes to milliseconds
+            if (minInterval > 0 && minInterval <= Number.MAX_SAFE_INTEGER) {
+              registration.periodicSync.register('check-product-availability', {
+                minInterval: minInterval
+              }).then(() => {
+                console.log('Periodic sync registered with minInterval:', minInterval);
+              }).catch((error) => {
+                console.error('Error registering periodic sync:', error);
+              });
+            } else {
+              console.error('Invalid minInterval value:', minInterval);
+            }
+          } catch (error) {
+            console.error('Error getting notification settings from IndexedDB:', error);
+          }
+        } else {
+          console.warn('Periodic sync is not supported in this browser.');
+        }
       } else {
         console.warn('Service worker is not active yet.');
       }
     }).catch(error => {
       console.error('Error during service worker ready:', error);
     });
-
-    // Check for periodicSync support
-    if ('periodicSync' in navigator.serviceWorker) {
-      console.log('Periodic sync is supported in this browser.');
-    } else {
-      console.warn('Periodic sync is not supported in this browser.');
-    }
   }
 }
 

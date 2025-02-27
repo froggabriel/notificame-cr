@@ -103,8 +103,17 @@ self.addEventListener('activate', (event) => {
     }).then(() => {
       console.log('Taking control of the page');
       return self.clients.claim(); // Take control of the page
-    }).then(() => {
+    }).then(async () => {
       console.log('Service worker activated and page taken control');
+      // Fetch and apply notification settings
+      const settings = await getFromDB('notificationSettings');
+      if (settings) {
+        self.notificationSettings = settings;
+        console.log('Notification settings loaded:', self.notificationSettings);
+        updatePeriodicSync();
+      } else {
+        console.error('Notification settings not found');
+      }
     }).catch((error) => {
       console.error('Error during service worker activation:', error);
     })
@@ -121,7 +130,7 @@ self.addEventListener('activate', (event) => {
             self.registration.periodicSync.register('check-product-availability', {
               minInterval: minInterval
             }).then(() => {
-              console.log('Periodic sync registered');
+              console.log('Periodic sync registered with minInterval:', minInterval);
             }).catch((error) => {
               console.error('Error registering periodic sync:', error);
             })
@@ -204,30 +213,39 @@ async function checkProductAvailability() {
   console.log('Checking product availability...');
   try {
     const productIds = await getFromDB('productIds');
-    const selectedChain = await getFromDB('selectedChain');
-    const stores = await getStores(selectedChain);
     const showOnlyCRStores = await getFromDB('showOnlyCRStores');
     const previousAvailability = await getFromDB('previousAvailability') || {};
 
-    const availability = await fetchAllProductsAvailability(
-      selectedChain,
-      productIds[selectedChain],
-      () => {},
-      () => {},
-      () => {},
-      () => {},
-      () => {},
-      self.PROXY_URL,
-      showOnlyCRStores,
-      stores
-    );
+    console.log('Fetched data from IndexedDB:', { productIds, showOnlyCRStores, previousAvailability });
+
+    const chains = ['chain1', 'chain2'];
+    const availabilityPromises = chains.map(async (chain) => {
+      const stores = await getStores(chain);
+      return fetchAllProductsAvailability(
+        chain,
+        productIds[chain],
+        () => {},
+        () => {},
+        () => {},
+        () => {},
+        () => {},
+        self.PROXY_URL,
+        showOnlyCRStores,
+        stores
+      );
+    });
+
+    const allAvailability = await Promise.all(availabilityPromises);
 
     const changes = [];
-    availability.forEach(product => {
-      const previousProduct = previousAvailability[product.productId];
-      if (!previousProduct || previousProduct.availableAnywhere !== product.availableAnywhere) {
-        changes.push(product);
-      }
+    allAvailability.forEach((availability, index) => {
+      const chain = chains[index];
+      availability.forEach(product => {
+        const previousProduct = previousAvailability[product.productId];
+        if (!previousProduct || previousProduct.availableAnywhere !== product.availableAnywhere) {
+          changes.push({ ...product, chain });
+        }
+      });
     });
 
     console.log("changes ", changes);
@@ -235,7 +253,7 @@ async function checkProductAvailability() {
     if (changes.length > 0) {
       changes.forEach(change => {
         self.registration.showNotification('Product Availability Update', {
-          body: `${change.name} is now ${change.availableAnywhere ? 'available' : 'unavailable'}.`,
+          body: `${change.name} is now ${change.availableAnywhere ? 'available' : 'unavailable'} in ${change.chain}.`,
           icon: '/favicon.svg'
         }).then(() => {
           console.log('Product availability notification displayed:', change.name, change.availableAnywhere); // Add logging
@@ -243,21 +261,14 @@ async function checkProductAvailability() {
           console.error('Error displaying product availability notification:', error); // Add logging
         });
       });
-    } else {
-      self.registration.showNotification('Product Availability Update', {
-        body: 'No changes in product availability.',
-        icon: '/favicon.svg'
-      }).then(() => {
-        console.log('No changes in product availability notification displayed'); // Add logging
-      }).catch((error) => {
-        console.error('Error displaying no changes in product availability notification:', error); // Add logging
-      });
     }
 
     // Save the current availability to IndexedDB for future comparisons
     const newAvailability = {};
-    availability.forEach(product => {
-      newAvailability[product.productId] = product;
+    allAvailability.forEach(availability => {
+      availability.forEach(product => {
+        newAvailability[product.productId] = product;
+      });
     });
     await saveToDB('previousAvailability', newAvailability);
 
@@ -325,7 +336,7 @@ async function fetchAllProductsAvailability(selectedChain, productIds, setProduc
     .map(store => store.storeId);
 
   if (selectedChain === 'chain1') {
-    Promise.all(productIds.map(productId => {
+    return Promise.all(productIds.map(productId => {
       const algoliaRequest = {
         requests: [
           {
@@ -366,9 +377,7 @@ async function fetchAllProductsAvailability(selectedChain, productIds, setProduc
               availableAnywhere: availableAnywhere
             };
           } else {
-            if (process.env.NODE_ENV === 'development') {
-              console.warn('No hits found for the product.');
-            }
+            console.warn('No hits found for the product.');
             return null;
           }
         }).filter(product => product !== null);
@@ -385,9 +394,10 @@ async function fetchAllProductsAvailability(selectedChain, productIds, setProduc
         setLoading(false);
         setError('Error fetching product availability. Please try again.');
         console.error('Error checking availability:', error);
+        return [];
       });
   } else if (selectedChain === 'chain2') {
-    Promise.all(productIds.map(productId => {
+    return Promise.all(productIds.map(productId => {
       const requestData = [
         { skus: [productId] },
         { products: "getProductBySKU", metadata: { channelId: "5dc40d0e-e2c3-4c3b-9ed5-89fd11634e56" } }
@@ -405,9 +415,7 @@ async function fetchAllProductsAvailability(selectedChain, productIds, setProduc
 
         const productList = responses.map(response => {
           const product = response.data.products.results[0];
-          if (process.env.NODE_ENV === 'development') {
-            console.log('product:', product); // Add this line
-          }
+          console.log('product:', product); // Add this line
           if (product && product.masterData && product.masterData.current && product.masterData.current.masterVariant && product.masterData.current.masterVariant.availability && product.masterData.current.masterVariant.availability.channels && product.masterData.current.masterVariant.availability.channels.results) {
             const storeDetail = {};
             product.masterData.current.masterVariant.availability.channels.results.forEach(store => {
@@ -426,9 +434,7 @@ async function fetchAllProductsAvailability(selectedChain, productIds, setProduc
               ? costaRicaStoreIds.some(storeId => storeDetail[storeId] && storeDetail[storeId].hasInvontory === 1)
               : Object.values(storeDetail).some(detail => detail.hasInvontory === 1);
 
-            if (process.env.NODE_ENV === 'development') {
-              console.log('availableAnywhere:', availableAnywhere); // Add this line
-            }
+            console.log('availableAnywhere:', availableAnywhere); // Add this line
 
             return {
               productId: product.masterData.current.masterVariant.sku,
@@ -451,6 +457,7 @@ async function fetchAllProductsAvailability(selectedChain, productIds, setProduc
         setLoading(false);
         setError('Error fetching product availability. Please try again.');
         console.error('Error checking availability:', error);
+        return [];
       });
   }
 }

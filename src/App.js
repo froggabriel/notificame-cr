@@ -113,17 +113,6 @@ function App() {
 
     const LOCAL_STORAGE_KEY = 'productIds';
 
-    // Function to load state from IndexedDB
-    const loadStateFromIndexedDB = async () => {
-        try {
-            const state = await getFromDB(LOCAL_STORAGE_KEY);
-            return state || null;
-        } catch (error) {
-            console.error('Error loading state from IndexedDB:', error);
-            return null;
-        }
-    };
-
     const [productIds, setProductIds] = useState({
         chain1: [
             "6a237f75-d599-ec11-b400-000d3a347b43",
@@ -245,7 +234,7 @@ function App() {
                 console.error('Error during service worker ready:', error);
             });
         }
-    }, [notificationSettings.interval]);
+    }, [notificationSettings.interval, notificationSettings]);
 
     const requestNotificationPermission = async () => {
         if ('Notification' in window && navigator.serviceWorker) {
