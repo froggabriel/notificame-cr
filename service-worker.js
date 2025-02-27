@@ -163,41 +163,6 @@ self.addEventListener('activate', (event) => {
   });
 });
 
-self.addEventListener('push', (event) => {
-  const data = event.data.json();
-  const options = {
-    body: data.body,
-    icon: data.icon || '/favicon.svg', // Use provided icon or fallback to favicon
-    badge: data.badge || '/favicon.svg', // Use provided badge or fallback to favicon
-    actions: data.actions || [], // Add actions if provided
-    data: data.url || '/' // Add URL to data for click handling
-  };
-  event.waitUntil(
-    self.registration.showNotification(data.title, options).then(() => {
-      console.log('Push notification displayed:', data.title, options); // Add logging
-    }).catch((error) => {
-      console.error('Error displaying push notification:', error); // Add logging
-    })
-  );
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const url = event.notification.data;
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url === url && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
-    })
-  );
-});
-
 self.addEventListener('periodicsync', (event) => {
   if (event.tag === 'check-product-availability') {
     console.log('Periodic sync event triggered');
@@ -225,6 +190,30 @@ self.addEventListener('message', (event) => {
       console.error('Error displaying test notification:', error); // Add logging
     });
   }
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const { url, chain, productId } = event.notification.data;
+  console.log('Notification clicked:', { url, chain, productId }); // Add logging
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url === url && 'focus' in client) {
+          console.log('Found existing client, focusing and sending message:', { chain, productId }); // Add logging
+          client.postMessage({ type: 'SWITCH_CHAIN_AND_PRODUCT', chain, productId });
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        console.log('Opening new window and sending message:', { chain, productId }); // Add logging
+        return clients.openWindow(url).then((windowClient) => {
+          console.log('New window opened, sending message:', { chain, productId }); // Add logging
+          windowClient.postMessage({ type: 'SWITCH_CHAIN_AND_PRODUCT', chain, productId });
+        });
+      }
+    })
+  );
 });
 
 async function checkProductAvailability() {
@@ -275,8 +264,11 @@ async function checkProductAvailability() {
         self.registration.showNotification('Product Availability Update', {
           body: `${change.name} is now ${change.availableAnywhere ? 'available' : 'unavailable'} in ${chainNames[change.chain]}.`,
           icon: change.imageUrl || '/favicon.svg', // Use product image URL or fallback to favicon
+          badge: '/favicon.svg', // Add badge property
           data: {
-            url: '/' // Set the data URL to the site URL
+            url: '/',
+            chain: change.chain,
+            productId: change.productId
           }
         }).then(() => {
           console.log('Product availability notification displayed:', change.name, change.availableAnywhere); // Add logging
