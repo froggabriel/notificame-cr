@@ -242,7 +242,12 @@ function App() {
     };
 
     useEffect(() => {
-        requestNotificationPermission();
+        const registerServiceWorkerAndRequestPermission = async () => {
+            await serviceWorkerRegistration.register();
+            await requestNotificationPermission();
+        };
+
+        registerServiceWorkerAndRequestPermission();
     }, []);
 
     // const sendNotification = (title, options) => {
